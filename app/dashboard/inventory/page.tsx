@@ -1,7 +1,7 @@
+import Link from "next/link";
 import {
   createInventoryPartAction,
   deleteInventoryPartAction,
-  updateInventoryPartAction,
 } from "@/app/dashboard/inventory/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { ServerActionForm } from "@/components/server-action-form";
@@ -22,11 +22,7 @@ type DocumentWithUrl = DocumentRecord & {
   downloadUrl: string;
 };
 
-export default async function InventoryPage({
-  searchParams,
-}: {
-  searchParams?: { edit_id?: string };
-}) {
+export default async function InventoryPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -75,33 +71,27 @@ export default async function InventoryPage({
     }
   });
 
-  const editId = (searchParams?.edit_id ?? "").trim();
-  const editingPart = parts?.find((part) => part.id === editId);
-
   return (
     <section>
       <h2 className="text-2xl font-bold text-slate-900">Inventory</h2>
       <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
         <ServerActionForm
-          action={editingPart ? updateInventoryPartAction : createInventoryPartAction}
-          resetOnSuccess={!editingPart}
-          successMessage={editingPart ? "Part updated successfully." : "Part saved successfully."}
+          action={createInventoryPartAction}
+          resetOnSuccess
+          successMessage="Part saved successfully."
           className="rounded-xl border border-slate-200 p-4"
         >
-          <h3 className="text-base font-semibold text-slate-900">{editingPart ? "Edit Part" : "Add Part"}</h3>
+          <h3 className="text-base font-semibold text-slate-900">Add Part</h3>
           <div className="mt-4 space-y-3">
-            {editingPart && <input type="hidden" name="id" value={editingPart.id} />}
             <input
               name="name"
               required
-              defaultValue={editingPart?.name ?? ""}
               placeholder="Part name"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
-            <input name="sku" defaultValue={editingPart?.sku ?? ""} placeholder="SKU" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <input name="sku" placeholder="SKU" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             <select
               name="location_id"
-              defaultValue={editingPart?.location_id ?? ""}
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
@@ -116,7 +106,7 @@ export default async function InventoryPage({
                 min="0"
                 step="0.01"
                 name="quantity_on_hand"
-                defaultValue={editingPart?.quantity_on_hand ?? 0}
+                defaultValue={0}
                 placeholder="Qty"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
@@ -125,7 +115,7 @@ export default async function InventoryPage({
                 min="0"
                 step="0.01"
                 name="reorder_threshold"
-                defaultValue={editingPart?.reorder_threshold ?? 0}
+                defaultValue={0}
                 placeholder="Reorder"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
@@ -135,7 +125,6 @@ export default async function InventoryPage({
               min="0"
               step="0.01"
               name="unit_cost"
-              defaultValue={editingPart?.unit_cost ?? ""}
               placeholder="Unit cost"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
@@ -152,16 +141,11 @@ export default async function InventoryPage({
             </div>
             <FormSubmitButton
               type="submit"
-              pendingText={editingPart ? "Updating..." : "Saving..."}
+              pendingText="Saving..."
               className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
             >
-              {editingPart ? "Update Part" : "Save Part"}
+              Save Part
             </FormSubmitButton>
-            {editingPart && (
-              <a href="/dashboard/inventory" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-                Cancel Edit
-              </a>
-            )}
           </div>
         </ServerActionForm>
 
@@ -215,6 +199,9 @@ export default async function InventoryPage({
                     <td className="px-4 py-4 text-slate-700">{part.unit_cost ?? "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/inventory/${part.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteInventoryPartAction}>
                           <input type="hidden" name="id" value={part.id} />
                           <FormSubmitButton

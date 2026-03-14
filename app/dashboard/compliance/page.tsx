@@ -1,8 +1,7 @@
+import Link from "next/link";
 import {
   createComplianceRecordAction,
   deleteComplianceRecordAction,
-  updateComplianceRecordAction,
-  updateComplianceStatusAction,
 } from "@/app/dashboard/compliance/actions";
 import { FilterForm } from "@/components/filter-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -32,13 +31,12 @@ type ComplianceRecord = {
 export default async function CompliancePage({
   searchParams,
 }: {
-  searchParams?: { status?: string; edit_id?: string };
+  searchParams?: { status?: string };
 }) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
   const statusFilter = (searchParams?.status ?? "").trim();
-  const editId = (searchParams?.edit_id ?? "").trim();
 
   let query = supabase
     .from("compliance_records")
@@ -76,7 +74,6 @@ export default async function CompliancePage({
   const passed = complianceRecords.filter((r) => r.status === "passed").length;
   const failed = complianceRecords.filter((r) => r.status === "failed").length;
   const overdue = complianceRecords.filter((r) => r.status === "overdue").length;
-  const editingRecord = complianceRecords.find((record) => record.id === editId);
 
   function getAssetName(record: ComplianceRecord) {
     if (Array.isArray(record.assets)) {
@@ -136,16 +133,14 @@ export default async function CompliancePage({
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <ServerActionForm
-          action={editingRecord ? updateComplianceRecordAction : createComplianceRecordAction}
-          resetOnSuccess={!editingRecord}
-          successMessage={editingRecord ? "Compliance record updated successfully." : "Compliance record created successfully."}
+          action={createComplianceRecordAction}
+          resetOnSuccess
+          successMessage="Compliance record created successfully."
           className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
         >
-          <h3 className="text-base font-bold text-slate-900">{editingRecord ? "Edit Record" : "Create Record"}</h3>
-          {editingRecord && <input type="hidden" name="id" value={editingRecord.id} />}
+          <h3 className="text-base font-bold text-slate-900">Create Record</h3>
           <select
             name="asset_id"
-            defaultValue={editingRecord?.asset_id ?? ""}
             required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
@@ -158,25 +153,19 @@ export default async function CompliancePage({
           </select>
           <input
             name="inspection_type"
-            defaultValue={editingRecord?.inspection_type ?? ""}
             required
             placeholder="Inspection type *"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <input name="due_date" type="date" defaultValue={editingRecord?.due_date ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <textarea name="notes" defaultValue={editingRecord?.notes ?? ""} placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <input name="due_date" type="date" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <textarea name="notes" placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <FormSubmitButton
             type="submit"
-            pendingText={editingRecord ? "Updating..." : "Saving..."}
+            pendingText="Saving..."
             className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
           >
-            {editingRecord ? "Update" : "Create"}
+            Create
           </FormSubmitButton>
-          {editingRecord && (
-            <a href="/dashboard/compliance" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-              Cancel Edit
-            </a>
-          )}
         </ServerActionForm>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
@@ -209,25 +198,15 @@ export default async function CompliancePage({
                     <td className="px-4 py-4 text-slate-600">{record.inspection_type}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(record.due_date)}</td>
                     <td className="px-4 py-4">
-                      <form action={updateComplianceStatusAction} className="flex gap-1">
-                        <input type="hidden" name="id" value={record.id} />
-                        <select name="status" defaultValue={record.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
-                          <option value="pending">Pending</option>
-                          <option value="passed">Passed</option>
-                          <option value="failed">Failed</option>
-                          <option value="overdue">Overdue</option>
-                        </select>
-                        <FormSubmitButton
-                          type="submit"
-                          pendingText="Updating..."
-                          className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
-                        >
-                          Status
-                        </FormSubmitButton>
-                      </form>
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                        {record.status}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/compliance/${record.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteComplianceRecordAction}>
                           <input type="hidden" name="id" value={record.id} />
                           <FormSubmitButton

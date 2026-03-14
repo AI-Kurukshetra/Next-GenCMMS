@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createMeterAction, deleteMeterAction, updateMeterAction } from "@/app/dashboard/meters/actions";
+import { createMeterAction, deleteMeterAction } from "@/app/dashboard/meters/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
@@ -23,11 +23,7 @@ type MeterRecord = {
     | null;
 };
 
-export default async function MetersPage({
-  searchParams,
-}: {
-  searchParams?: { edit_id?: string };
-}) {
+export default async function MetersPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -44,9 +40,7 @@ export default async function MetersPage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
-  const editId = (searchParams?.edit_id ?? "").trim();
   const meterRows = (meters ?? []) as MeterRecord[];
-  const editingMeter = meterRows.find((meter) => meter.id === editId);
 
   function getAssetName(meter: MeterRecord) {
     if (Array.isArray(meter.assets)) {
@@ -65,16 +59,14 @@ export default async function MetersPage({
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <ServerActionForm
-          action={editingMeter ? updateMeterAction : createMeterAction}
-          resetOnSuccess={!editingMeter}
-          successMessage={editingMeter ? "Meter updated successfully." : "Meter created successfully."}
+          action={createMeterAction}
+          resetOnSuccess
+          successMessage="Meter created successfully."
           className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
         >
-          <h3 className="text-base font-bold text-slate-900">{editingMeter ? "Edit Meter" : "Create Meter"}</h3>
-          {editingMeter && <input type="hidden" name="id" value={editingMeter.id} />}
+          <h3 className="text-base font-bold text-slate-900">Create Meter</h3>
           <select
             name="asset_id"
-            defaultValue={editingMeter?.asset_id ?? ""}
             required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
@@ -85,7 +77,7 @@ export default async function MetersPage({
               </option>
             ))}
           </select>
-          <select name="meter_type" defaultValue={editingMeter?.meter_type ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <select name="meter_type" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             <option value="">Meter type *</option>
             <option value="hours">Hours</option>
             <option value="cycles">Cycles</option>
@@ -95,7 +87,6 @@ export default async function MetersPage({
           <input
             name="unit"
             required
-            defaultValue={editingMeter?.unit ?? ""}
             placeholder="Unit (e.g., hrs, km) *"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
@@ -104,22 +95,16 @@ export default async function MetersPage({
             type="number"
             min="0"
             step="0.01"
-            defaultValue={editingMeter?.current_reading ?? ""}
             placeholder="Initial reading"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
           <FormSubmitButton
             type="submit"
-            pendingText={editingMeter ? "Updating..." : "Saving..."}
+            pendingText="Saving..."
             className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
           >
-            {editingMeter ? "Update Meter" : "Create Meter"}
+            Create Meter
           </FormSubmitButton>
-          {editingMeter && (
-            <Link href="/dashboard/meters" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-              Cancel Edit
-            </Link>
-          )}
         </ServerActionForm>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
@@ -158,6 +143,9 @@ export default async function MetersPage({
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/meters/${meter.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteMeterAction}>
                           <input type="hidden" name="id" value={meter.id} />
                           <FormSubmitButton

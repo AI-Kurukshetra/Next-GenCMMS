@@ -108,24 +108,35 @@ export default async function MaintenanceHistoryPage({
         ]}
       />
 
-      <div className="rounded-xl border border-slate-200 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">History records</h4>
+              <p className="mt-1 text-xs text-slate-500">Audit trail of maintenance events and updates</p>
+            </div>
+            <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+              {historyRows.length} total
+            </div>
+          </div>
+        </div>
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Asset</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Event Type</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Details</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Performed By</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
+              <th className="px-4 py-3">Asset</th>
+              <th className="px-4 py-3">Event Type</th>
+              <th className="px-4 py-3">Details</th>
+              <th className="px-4 py-3">Performed By</th>
+              <th className="px-4 py-3">Date</th>
             </tr>
           </thead>
           <tbody>
             {historyRows.length ? (
               historyRows.map((h) => (
-                <tr key={h.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{getSingleRelation(h.assets)?.name || "Unknown"}</td>
-                  <td className="px-4 py-3 capitalize text-slate-700">{h.event_type.replace("_", " ")}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">
+                <tr key={h.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 font-medium text-slate-900">{getSingleRelation(h.assets)?.name || "Unknown"}</td>
+                  <td className="px-4 py-4 capitalize text-slate-700">{h.event_type.replace("_", " ")}</td>
+                  <td className="px-4 py-4 text-xs text-slate-600">
                     {(() => {
                       if (typeof h.event_data === "object" && h.event_data !== null) {
                         return JSON.stringify(h.event_data).substring(0, 50) + "...";
@@ -133,8 +144,8 @@ export default async function MaintenanceHistoryPage({
                       return h.event_data ? String(h.event_data) : "-";
                     })()}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{getSingleRelation(h.performer)?.full_name || "-"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{h.created_at ? formatDateRelative(h.created_at) : "Date unknown"}</td>
+                  <td className="px-4 py-4 text-slate-600">{getSingleRelation(h.performer)?.full_name || "-"}</td>
+                  <td className="px-4 py-4 text-xs text-slate-500">{h.created_at ? formatDateRelative(h.created_at) : "Date unknown"}</td>
                 </tr>
               ))
             ) : (

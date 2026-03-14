@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   createPurchaseOrderAction,
   deletePurchaseOrderAction,
-  updatePurchaseOrderStatusAction,
 } from "@/app/dashboard/purchase-orders/actions";
 import { FilterForm } from "@/components/filter-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -167,23 +166,9 @@ export default async function PurchaseOrdersPage({
                     </td>
                     <td className="px-4 py-4 text-slate-600">{getVendorName(po) || "-"}</td>
                     <td className="px-4 py-4">
-                      <form action={updatePurchaseOrderStatusAction} className="flex gap-1">
-                        <input type="hidden" name="id" value={po.id} />
-                        <select name="status" defaultValue={po.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
-                          {statusOptions.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                        <FormSubmitButton
-                          type="submit"
-                          pendingText="Updating..."
-                          className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
-                        >
-                          Update
-                        </FormSubmitButton>
-                      </form>
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                        {po.status}
+                      </span>
                     </td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(po.order_date)}</td>
                     <td className="px-4 py-4">

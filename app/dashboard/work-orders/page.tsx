@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   createWorkOrderAction,
   deleteWorkOrderAction,
-  updateWorkOrderStatusAction,
 } from "@/app/dashboard/work-orders/actions";
 import { FilterForm } from "@/components/filter-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -45,8 +44,6 @@ export default async function WorkOrdersPage({
     supabase.from("locations").select("id,name").eq("organization_id", profile.organization_id).order("name"),
     supabase.from("profiles").select("id,full_name").eq("organization_id", profile.organization_id).eq("role", "technician"),
   ]);
-
-  const statusOptions = ["open", "assigned", "in_progress", "completed", "cancelled"];
 
   return (
     <section className="space-y-6">
@@ -163,19 +160,9 @@ export default async function WorkOrdersPage({
                   <td className="px-4 py-4 capitalize text-slate-600">{wo.maintenance_type}</td>
                   <td className="px-4 py-4"><span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${wo.priority === 'critical' ? 'bg-red-100 text-red-800' : wo.priority === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}`}>{wo.priority}</span></td>
                   <td className="px-4 py-4">
-                    <form action={updateWorkOrderStatusAction} className="flex gap-1">
-                      <input type="hidden" name="id" value={wo.id} />
-                      <select name="status" defaultValue={wo.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
-                        {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <FormSubmitButton
-                        type="submit"
-                        pendingText="Updating..."
-                        className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
-                      >
-                        Update
-                      </FormSubmitButton>
-                    </form>
+                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                      {wo.status.replaceAll("_", " ")}
+                    </span>
                   </td>
                   <td className="px-4 py-4 text-slate-600">{formatDate(wo.due_date || "", "MMM d")}</td>
                   <td className="px-4 py-4">

@@ -2,7 +2,6 @@ import {
   createScheduleAction,
   deleteScheduleAction,
   runPmGenerationAction,
-  updateScheduleAction,
 } from "@/app/dashboard/preventive/actions";
 import Link from "next/link";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -10,11 +9,7 @@ import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function PreventivePage({
-  searchParams,
-}: {
-  searchParams?: { edit_id?: string };
-}) {
+export default async function PreventivePage() {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -31,15 +26,12 @@ export default async function PreventivePage({
       .eq("organization_id", profile.organization_id)
       .order("name", { ascending: true }),
   ]);
-  const editId = (searchParams?.edit_id ?? "").trim();
-  const editingSchedule = schedules?.find((schedule) => schedule.id === editId);
-
   return (
-    <section>
+    <section className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Preventive Maintenance</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-3xl font-black text-slate-900">Preventive Maintenance</h2>
+          <p className="mt-2 text-slate-600">
             Calendar-based PM schedule definitions with auto generation.
           </p>
         </div>
@@ -53,26 +45,23 @@ export default async function PreventivePage({
         </form>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <ServerActionForm
-          action={editingSchedule ? updateScheduleAction : createScheduleAction}
-          resetOnSuccess={!editingSchedule}
-          successMessage={editingSchedule ? "Schedule updated successfully." : "Schedule saved successfully."}
-          className="rounded-xl border border-slate-200 p-4"
+          action={createScheduleAction}
+          resetOnSuccess
+          successMessage="Schedule saved successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
         >
-          <h3 className="text-base font-semibold text-slate-900">{editingSchedule ? "Edit PM Schedule" : "Create PM Schedule"}</h3>
+          <h3 className="text-base font-semibold text-slate-900">Create PM Schedule</h3>
           <div className="mt-4 space-y-3">
-            {editingSchedule && <input type="hidden" name="id" value={editingSchedule.id} />}
             <input
               name="title"
-              defaultValue={editingSchedule?.title ?? ""}
               required
               placeholder="Schedule title"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
             <select
               name="asset_id"
-              defaultValue={editingSchedule?.asset_id ?? ""}
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
@@ -86,50 +75,58 @@ export default async function PreventivePage({
               type="number"
               min={1}
               required
-              defaultValue={editingSchedule?.interval_days ?? 30}
+              defaultValue={30}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
             <input
               name="next_due_date"
               type="date"
-              defaultValue={editingSchedule?.next_due_date ?? ""}
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
             <FormSubmitButton
               type="submit"
-              pendingText={editingSchedule ? "Updating..." : "Saving..."}
+              pendingText="Saving..."
               className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
             >
-              {editingSchedule ? "Update Schedule" : "Save Schedule"}
+              Save Schedule
             </FormSubmitButton>
-            {editingSchedule && (
-              <Link href="/dashboard/preventive" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-                Cancel Edit
-              </Link>
-            )}
           </div>
         </ServerActionForm>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">PM schedules</h4>
+                <p className="mt-1 text-xs text-slate-500">Plan recurring preventive maintenance tasks</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {schedules?.length || 0} total
+              </div>
+            </div>
+          </div>
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-3 py-2">Title</th>
-                <th className="px-3 py-2">Interval</th>
-                <th className="px-3 py-2">Next Due</th>
-                <th className="px-3 py-2">Actions</th>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Interval</th>
+                <th className="px-4 py-3">Next Due</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {schedules?.length ? (
                 schedules.map((schedule) => (
-                  <tr key={schedule.id} className="border-t border-slate-100">
-                    <td className="px-3 py-2 font-medium text-slate-800">{schedule.title}</td>
-                    <td className="px-3 py-2 text-slate-700">{schedule.interval_days} days</td>
-                    <td className="px-3 py-2 text-slate-700">{schedule.next_due_date}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
+                  <tr key={schedule.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-4 py-4 font-medium text-slate-800">{schedule.title}</td>
+                    <td className="px-4 py-4 text-slate-700">{schedule.interval_days} days</td>
+                    <td className="px-4 py-4 text-slate-700">{schedule.next_due_date}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/preventive/${schedule.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteScheduleAction}>
                           <input type="hidden" name="id" value={schedule.id} />
                           <FormSubmitButton
@@ -146,7 +143,7 @@ export default async function PreventivePage({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-500">No PM schedules yet.</td>
+                  <td colSpan={4} className="px-4 py-6 text-center text-slate-500">No PM schedules yet.</td>
                 </tr>
               )}
             </tbody>
