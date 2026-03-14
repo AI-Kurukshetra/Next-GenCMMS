@@ -3,6 +3,41 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
 
+type DocumentRow = {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  bucket: string;
+  path: string;
+  mime_type: string | null;
+  uploaded_by: string | null;
+  created_at: string | null;
+  uploader:
+    | {
+        full_name: string | null;
+      }
+    | {
+        full_name: string | null;
+      }[]
+    | null;
+  asset:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+  work_order:
+    | {
+        title: string | null;
+      }
+    | {
+        title: string | null;
+      }[]
+    | null;
+};
+
 export default async function DocumentsPage({
   searchParams,
 }: {
@@ -37,18 +72,25 @@ export default async function DocumentsPage({
   }
 
   const { data: documents } = await query;
+  const documentRows = (documents ?? []) as DocumentRow[];
 
-  // Get entity names
-  const getEntityName = (doc: any) => {
+  function getSingleRelation<T>(relation: T | T[] | null): T | null {
+    if (Array.isArray(relation)) {
+      return relation[0] ?? null;
+    }
+    return relation ?? null;
+  }
+
+  const getEntityName = (doc: DocumentRow) => {
     if (doc.entity_type === "asset") {
-      return doc.asset?.name || "Unknown";
+      return getSingleRelation(doc.asset)?.name || "Unknown";
     } else if (doc.entity_type === "work_order") {
-      return doc.work_order?.title || "Unknown";
+      return getSingleRelation(doc.work_order)?.title || "Unknown";
     }
     return "Unknown";
   };
 
-  const getDownloadUrl = (doc: any) => {
+  const getDownloadUrl = (doc: DocumentRow) => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const bucket = doc.bucket;
     const path = doc.path;
@@ -93,14 +135,14 @@ export default async function DocumentsPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {documents?.length ? (
-              documents.map((doc: any) => (
+            {documentRows.length ? (
+              documentRows.map((doc) => (
                 <tr key={doc.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 capitalize text-slate-700 font-medium">{doc.entity_type}</td>
                   <td className="px-4 py-3 text-slate-900 font-medium">{getEntityName(doc)}</td>
                   <td className="px-4 py-3 text-slate-600">{getFileNameFromPath(doc.path)}</td>
-                  <td className="px-4 py-3 text-slate-600">{doc.uploader?.full_name || "-"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDateRelative(doc.created_at)}</td>
+                  <td className="px-4 py-3 text-slate-600">{getSingleRelation(doc.uploader)?.full_name || "-"}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{doc.created_at ? formatDateRelative(doc.created_at) : "Date unknown"}</td>
                   <td className="px-4 py-3">
                     <a
                       href={getDownloadUrl(doc)}

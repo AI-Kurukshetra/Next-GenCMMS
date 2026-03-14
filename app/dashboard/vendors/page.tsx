@@ -57,30 +57,41 @@ export default async function VendorsPage({
           )}
         </ServerActionForm>
 
-        <div className="rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Vendors</h4>
+                <p className="mt-1 text-xs text-slate-500">Manage suppliers and service providers</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {vendors?.length || 0} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Services</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Contact</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Phone</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Rating</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Services</th>
+                <th className="px-4 py-3">Contact</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Phone</th>
+                <th className="px-4 py-3">Rating</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {vendors?.length ? vendors.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{v.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.services || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.contact_name || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.email || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.phone || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{v.performance_score ?? "-"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                <tr key={v.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 font-medium text-slate-900">{v.name}</td>
+                  <td className="px-4 py-4 text-slate-600">{v.services || "-"}</td>
+                  <td className="px-4 py-4 text-slate-600">{v.contact_name || "-"}</td>
+                  <td className="px-4 py-4 text-slate-600">{v.email || "-"}</td>
+                  <td className="px-4 py-4 text-slate-600">{v.phone || "-"}</td>
+                  <td className="px-4 py-4 text-slate-600">{v.performance_score ?? "-"}</td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end gap-2">
                       <form action={deleteVendorAction}>
                         <input type="hidden" name="id" value={v.id} />
                         <FormSubmitButton

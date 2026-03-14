@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { addPurchaseOrderItemAction, updatePurchaseOrderAction } from "@/app/dashboard/purchase-orders/actions";
+import { addPurchaseOrderItemAction, updatePurchaseOrderAction, uploadPODocumentAction } from "@/app/dashboard/purchase-orders/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
 type PurchaseOrderItemRecord = {
@@ -22,11 +23,24 @@ type PurchaseOrderItemRecord = {
     | null;
 };
 
+type DocumentRecord = {
+  id: string;
+  bucket: string;
+  entity_id: string;
+  path: string;
+  mime_type: string | null;
+  created_at: string | null;
+};
+
+type DocumentWithUrl = DocumentRecord & {
+  downloadUrl: string;
+};
+
 export default async function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const [{ data: po }, { data: items }, { data: parts }, { data: vendors }] = await Promise.all([
+  const [{ data: po }, { data: items }, { data: parts }, { data: vendors }, { data: documents }] = await Promise.all([
     supabase
       .from("purchase_orders")
       .select("id,po_number,status,order_date,expected_date,notes,total_amount,vendor_id,vendors(id,name),created_by")
@@ -48,11 +62,36 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
       .select("id,name")
       .eq("organization_id", profile.organization_id)
       .order("name"),
+    supabase
+      .from("documents")
+      .select("id,bucket,entity_id,path,mime_type,created_at")
+      .eq("organization_id", profile.organization_id)
+      .eq("entity_type", "purchase_order")
+      .eq("entity_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   if (!po) {
     return <div className="text-center py-12 text-slate-500">Purchase order not found</div>;
   }
+
+  const documentRecords = (documents ?? []) as DocumentRecord[];
+  const storageClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const signedDocuments = await Promise.all(
+    documentRecords.map(async (doc) => {
+      const { data, error } = await storageClient.storage.from(doc.bucket).createSignedUrl(doc.path, 3600);
+      if (error || !data?.signedUrl) {
+        return null;
+      }
+      return {
+        ...doc,
+        downloadUrl: data.signedUrl,
+      };
+    })
+  );
+
+  const validDocuments = signedDocuments.filter((doc): doc is DocumentWithUrl => doc !== null);
 
   const purchaseOrderItems = (items ?? []) as PurchaseOrderItemRecord[];
   const totalItems = purchaseOrderItems.reduce(
@@ -66,6 +105,16 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
     }
 
     return item.inventory_parts ?? null;
+  }
+
+  function getVendorName() {
+    if (!po) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vendors = po.vendors as any;
+    if (Array.isArray(vendors)) {
+      return vendors[0]?.name ?? null;
+    }
+    return vendors?.name ?? null;
   }
 
   return (
@@ -91,7 +140,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-slate-600">Vendor</p>
-                <p className="text-base font-semibold text-slate-900">{po.vendors?.name}</p>
+                <p className="text-base font-semibold text-slate-900">{getVendorName()}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-600">Order Date</p>
@@ -220,6 +269,64 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
               Add Item
             </FormSubmitButton>
           </ServerActionForm>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <h3 className="text-base font-bold text-slate-900 mb-4">Documents</h3>
+
+            <ServerActionForm
+              action={uploadPODocumentAction}
+              resetOnSuccess
+              successMessage="Document uploaded successfully."
+              encType="multipart/form-data"
+              className="space-y-3 mb-4 pb-4 border-b border-slate-200"
+            >
+              <input type="hidden" name="purchase_order_id" value={po.id} />
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                  Upload Invoice / Receipt (optional)
+                </label>
+                <input
+                  type="file"
+                  name="document"
+                  accept="image/*,.pdf"
+                  className="w-full cursor-pointer rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600"
+                />
+              </div>
+              <FormSubmitButton
+                type="submit"
+                pendingText="Uploading..."
+                className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Upload
+              </FormSubmitButton>
+            </ServerActionForm>
+
+            {validDocuments.length > 0 ? (
+              <div className="space-y-2">
+                {validDocuments.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">
+                        {doc.path.split("/").pop()}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {doc.created_at ? formatDate(doc.created_at) : "Date unknown"}
+                      </p>
+                    </div>
+                    <a
+                      href={doc.downloadUrl}
+                      download
+                      className="ml-2 rounded bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200"
+                    >
+                      Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No documents uploaded yet</p>
+            )}
+          </div>
         </div>
       </div>
     </section>

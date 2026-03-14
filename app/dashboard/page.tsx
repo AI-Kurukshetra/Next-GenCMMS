@@ -133,7 +133,6 @@ export default async function DashboardPage() {
   }).length;
 
   const totalWOs = openWOs + inProgressWOs + completedWOs;
-  const completionRate = calculateProgressPercent(completedWOs, totalWOs);
   const assetUptime = calculateProgressPercent(activeAssets, totalAssets);
   const pmComplianceRate = calculateProgressPercent(completedWOs, totalWOs);
 
@@ -162,7 +161,7 @@ export default async function DashboardPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-4xl font-black text-slate-900">Operations Overview</h1>
-          <p className="mt-2 text-slate-600">Welcome back! Here's your maintenance snapshot</p>
+          <p className="mt-2 text-slate-600">Welcome back! Here&apos;s your maintenance snapshot</p>
         </div>
         <div className="flex gap-2">
           <Link

@@ -5,7 +5,7 @@ export function CSVExportButton({
   filename,
   columns,
 }: {
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
   filename: string;
   columns: string[];
 }) {

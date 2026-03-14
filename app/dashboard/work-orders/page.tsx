@@ -133,25 +133,36 @@ export default async function WorkOrdersPage({
           </FormSubmitButton>
         </ServerActionForm>
 
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Work orders</h4>
+                <p className="mt-1 text-xs text-slate-500">Create, assign, and track maintenance tasks</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {workOrders?.length || 0} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Title</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Type</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Priority</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Due</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Priority</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Due</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {workOrders?.length ? workOrders.map((wo) => (
-                <tr key={wo.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium"><Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 hover:underline">{wo.title}</Link></td>
-                  <td className="px-4 py-3 capitalize text-slate-600">{wo.maintenance_type}</td>
-                  <td className="px-4 py-3"><span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${wo.priority === 'critical' ? 'bg-red-100 text-red-800' : wo.priority === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}`}>{wo.priority}</span></td>
-                  <td className="px-4 py-3">
+                <tr key={wo.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 font-medium"><Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 hover:underline">{wo.title}</Link></td>
+                  <td className="px-4 py-4 capitalize text-slate-600">{wo.maintenance_type}</td>
+                  <td className="px-4 py-4"><span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${wo.priority === 'critical' ? 'bg-red-100 text-red-800' : wo.priority === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}`}>{wo.priority}</span></td>
+                  <td className="px-4 py-4">
                     <form action={updateWorkOrderStatusAction} className="flex gap-1">
                       <input type="hidden" name="id" value={wo.id} />
                       <select name="status" defaultValue={wo.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
@@ -166,9 +177,9 @@ export default async function WorkOrdersPage({
                       </FormSubmitButton>
                     </form>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(wo.due_date || "", "MMM d")}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                  <td className="px-4 py-4 text-slate-600">{formatDate(wo.due_date || "", "MMM d")}</td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end items-center gap-2">
                       <Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">View</Link>
                       <form action={deleteWorkOrderAction}>
                         <input type="hidden" name="id" value={wo.id} />

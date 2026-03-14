@@ -3,6 +3,81 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+
+const DOCUMENTS_BUCKET = "documents";
+
+async function uploadInventoryImage({
+  partId,
+  image,
+  organizationId,
+  uploadedBy,
+}: {
+  partId: string;
+  image: File;
+  organizationId: string;
+  uploadedBy: string;
+}) {
+  const supabase = await createClient();
+
+  const fileName = image.name.replace(/\s+/g, "_");
+  const timestamp = Date.now();
+  const key = `org/${organizationId}/inventory/${partId}/${timestamp}-${fileName}`;
+  const uploadOptions = {
+    contentType: image.type || "application/octet-stream",
+    upsert: false,
+  };
+
+  const { error: uploadError } = await supabase.storage
+    .from(DOCUMENTS_BUCKET)
+    .upload(key, image, uploadOptions);
+
+  if (uploadError) {
+    const msg = uploadError.message.toLowerCase();
+    const shouldTryServiceRole =
+      msg.includes("bucket not found") || msg.includes("row-level security policy");
+
+    if (!shouldTryServiceRole) {
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
+
+    try {
+      const serviceRoleClient = createServiceRoleClient();
+      const { error: createBucketError } = await serviceRoleClient.storage.createBucket(DOCUMENTS_BUCKET, {
+        public: false,
+      });
+      if (createBucketError && !createBucketError.message.toLowerCase().includes("already")) {
+        throw new Error(createBucketError.message);
+      }
+
+      const imageBuffer = Buffer.from(await image.arrayBuffer());
+      const { error: serviceUploadError } = await serviceRoleClient.storage
+        .from(DOCUMENTS_BUCKET)
+        .upload(key, imageBuffer, uploadOptions);
+
+      if (serviceUploadError) {
+        throw new Error(serviceUploadError.message);
+      }
+    } catch (bucketError) {
+      const reason = bucketError instanceof Error ? bucketError.message : "Unknown bucket setup error";
+      throw new Error(`Failed to upload image: bucket setup failed (${reason})`);
+    }
+  }
+
+  const { error: documentError } = await supabase.from("documents").insert({
+    organization_id: organizationId,
+    entity_type: "inventory",
+    entity_id: partId,
+    bucket: DOCUMENTS_BUCKET,
+    path: key,
+    mime_type: image.type || null,
+    uploaded_by: uploadedBy,
+  });
+
+  if (documentError) {
+    throw new Error(`Failed to save image metadata: ${documentError.message}`);
+  }
+}
 
 export async function createInventoryPartAction(formData: FormData) {
   const profile = await requireProfile();
@@ -31,7 +106,24 @@ export async function createInventoryPartAction(formData: FormData) {
     throw new Error("Unit cost must be 0 or greater.");
   }
 
-  await supabase.from("inventory_parts").insert(payload);
+  const { data, error } = await supabase.from("inventory_parts").insert(payload).select("id").single();
+
+  if (error) {
+    throw new Error(`Failed to create part: ${error.message}`);
+  }
+
+  const partId = data.id;
+  const imageFile = formData.get("image") as File | null;
+
+  if (imageFile && imageFile.size > 0) {
+    await uploadInventoryImage({
+      partId,
+      image: imageFile,
+      organizationId: profile.organization_id,
+      uploadedBy: profile.id,
+    });
+  }
+
   revalidatePath("/dashboard/inventory");
 }
 
@@ -77,6 +169,17 @@ export async function updateInventoryPartAction(formData: FormData) {
 
   if (error) {
     throw new Error(`Failed to update part: ${error.message}`);
+  }
+
+  const imageFile = formData.get("image") as File | null;
+
+  if (imageFile && imageFile.size > 0) {
+    await uploadInventoryImage({
+      partId: id,
+      image: imageFile,
+      organizationId: profile.organization_id,
+      uploadedBy: profile.id,
+    });
   }
 
   revalidatePath("/dashboard/inventory");

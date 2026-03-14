@@ -134,28 +134,39 @@ export default async function PurchaseOrdersPage({
           </FormSubmitButton>
         </ServerActionForm>
 
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Purchase orders</h4>
+                <p className="mt-1 text-xs text-slate-500">Create and track purchase orders for parts and services</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {purchaseOrders.length} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">PO Number</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Vendor</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Order Date</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
+                <th className="px-4 py-3">PO Number</th>
+                <th className="px-4 py-3">Vendor</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Order Date</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {purchaseOrders.length ? (
                 purchaseOrders.map((po) => (
-                  <tr key={po.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium">
+                  <tr key={po.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-4 py-4 font-medium">
                       <Link href={`/dashboard/purchase-orders/${po.id}`} className="text-indigo-600 hover:underline">
                         {po.po_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{getVendorName(po) || "-"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4 text-slate-600">{getVendorName(po) || "-"}</td>
+                    <td className="px-4 py-4">
                       <form action={updatePurchaseOrderStatusAction} className="flex gap-1">
                         <input type="hidden" name="id" value={po.id} />
                         <select name="status" defaultValue={po.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
@@ -174,9 +185,9 @@ export default async function PurchaseOrdersPage({
                         </FormSubmitButton>
                       </form>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{formatDate(po.order_date)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-4 py-4 text-slate-600">{formatDate(po.order_date)}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end items-center gap-2">
                         <Link href={`/dashboard/purchase-orders/${po.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">
                           View
                         </Link>

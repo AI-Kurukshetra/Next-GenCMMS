@@ -3,6 +3,31 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
 
+type MaintenanceHistoryRow = {
+  id: string;
+  asset_id: string;
+  event_type: string;
+  event_data: unknown;
+  performed_by: string | null;
+  created_at: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+  performer:
+    | {
+        full_name: string | null;
+      }
+    | {
+        full_name: string | null;
+      }[]
+    | null;
+};
+
 export default async function MaintenanceHistoryPage({
   searchParams,
 }: {
@@ -45,11 +70,19 @@ export default async function MaintenanceHistoryPage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
+  const historyRows = (history ?? []) as MaintenanceHistoryRow[];
 
   // Get unique event types
   const eventTypes = Array.from(
-    new Set((history || []).map((h) => h.event_type))
+    new Set(historyRows.map((h) => h.event_type))
   );
+
+  function getSingleRelation<T>(relation: T | T[] | null): T | null {
+    if (Array.isArray(relation)) {
+      return relation[0] ?? null;
+    }
+    return relation ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -87,18 +120,21 @@ export default async function MaintenanceHistoryPage({
             </tr>
           </thead>
           <tbody>
-            {history?.length ? (
-              history.map((h: any) => (
+            {historyRows.length ? (
+              historyRows.map((h) => (
                 <tr key={h.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{h.assets?.name || "Unknown"}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{getSingleRelation(h.assets)?.name || "Unknown"}</td>
                   <td className="px-4 py-3 capitalize text-slate-700">{h.event_type.replace("_", " ")}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">
-                    {typeof h.event_data === "object"
-                      ? JSON.stringify(h.event_data).substring(0, 50) + "..."
-                      : h.event_data || "-"}
+                    {(() => {
+                      if (typeof h.event_data === "object" && h.event_data !== null) {
+                        return JSON.stringify(h.event_data).substring(0, 50) + "...";
+                      }
+                      return h.event_data ? String(h.event_data) : "-";
+                    })()}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{h.performer?.full_name || "-"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDateRelative(h.created_at)}</td>
+                  <td className="px-4 py-3 text-slate-600">{getSingleRelation(h.performer)?.full_name || "-"}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{h.created_at ? formatDateRelative(h.created_at) : "Date unknown"}</td>
                 </tr>
               ))
             ) : (

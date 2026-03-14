@@ -22,7 +22,7 @@ export async function GET(
 
     // Redirect to asset detail page
     redirect(`/dashboard/assets/${qrCode.asset_id}`);
-  } catch (error) {
+  } catch {
     redirect("/dashboard/assets?error=Error scanning QR code");
   }
 }
