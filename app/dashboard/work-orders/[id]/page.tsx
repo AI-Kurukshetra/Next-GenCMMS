@@ -6,6 +6,8 @@ import {
   updateWorkOrderAction,
   updateWorkOrderStatusAction,
 } from "@/app/dashboard/work-orders/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatDateRelative, getPriorityColor, getStatusColor } from "@/lib/utils";
@@ -87,9 +89,15 @@ export default async function WorkOrderDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <form action={updateWorkOrderAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+        <ServerActionForm
+          action={updateWorkOrderAction}
+          successMessage="Work order updated successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3"
+        >
           <h3 className="text-base font-bold text-slate-900">Edit Work Order</h3>
           <input type="hidden" name="id" value={workOrder.id} />
+          <input type="hidden" name="location_id" value={workOrder.location_id} />
+          <input type="hidden" name="asset_id" value={workOrder.asset_id} />
           <input name="title" defaultValue={workOrder.title} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea
             name="description"
@@ -128,10 +136,14 @@ export default async function WorkOrderDetailPage({
             defaultValue={workOrder.due_date ?? ""}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+          >
             Save Changes
-          </button>
-        </form>
+          </FormSubmitButton>
+        </ServerActionForm>
 
         <div className="space-y-4">
           <form action={updateWorkOrderStatusAction} className="rounded-xl border border-slate-200 bg-white p-5">
@@ -145,16 +157,25 @@ export default async function WorkOrderDetailPage({
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
-              <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+              <FormSubmitButton
+                type="submit"
+                pendingText="Updating..."
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+              >
                 Update
-              </button>
+              </FormSubmitButton>
             </div>
             <p className="mt-3 text-xs text-slate-500">
               Created {formatDateRelative(workOrder.created_at)} | Due {formatDate(workOrder.due_date || "")}
             </p>
           </form>
 
-          <form action={closeWorkOrderAction} className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+          <ServerActionForm
+            action={closeWorkOrderAction}
+            resetOnSuccess
+            successMessage="Work order closed successfully."
+            className="rounded-xl border border-slate-200 bg-white p-5 space-y-3"
+          >
             <h3 className="text-base font-bold text-slate-900">Close Work Order</h3>
             <input type="hidden" name="id" value={workOrder.id} />
             <textarea
@@ -164,15 +185,24 @@ export default async function WorkOrderDetailPage({
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
-            <button type="submit" className="w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Closing..."
+              className="w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            >
               Mark Completed
-            </button>
-          </form>
+            </FormSubmitButton>
+          </ServerActionForm>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <form action={logTimeAction} className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+        <ServerActionForm
+          action={logTimeAction}
+          resetOnSuccess
+          successMessage="Time log added successfully."
+          className="rounded-xl border border-slate-200 bg-white p-5 space-y-3"
+        >
           <h3 className="text-base font-bold text-slate-900">Log Time</h3>
           <input type="hidden" name="work_order_id" value={workOrder.id} />
           <div className="grid grid-cols-2 gap-2">
@@ -193,9 +223,13 @@ export default async function WorkOrderDetailPage({
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+          >
             Add Time Log
-          </button>
+          </FormSubmitButton>
 
           <div className="mt-2 space-y-2">
             {(timeLogsRes.data ?? []).map((log) => (
@@ -207,9 +241,14 @@ export default async function WorkOrderDetailPage({
               </div>
             ))}
           </div>
-        </form>
+        </ServerActionForm>
 
-        <form action={addPartUsageAction} className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+        <ServerActionForm
+          action={addPartUsageAction}
+          resetOnSuccess
+          successMessage="Part usage added successfully."
+          className="rounded-xl border border-slate-200 bg-white p-5 space-y-3"
+        >
           <h3 className="text-base font-bold text-slate-900">Part Usage</h3>
           <input type="hidden" name="work_order_id" value={workOrder.id} />
           <select name="part_id" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -229,9 +268,13 @@ export default async function WorkOrderDetailPage({
             placeholder="Quantity used"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+          >
             Add Part Usage
-          </button>
+          </FormSubmitButton>
 
           <div className="mt-2 space-y-2">
             {(partsUsageRes.data ?? []).map((item) => {
@@ -246,7 +289,7 @@ export default async function WorkOrderDetailPage({
               );
             })}
           </div>
-        </form>
+        </ServerActionForm>
       </div>
     </section>
   );

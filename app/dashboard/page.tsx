@@ -133,7 +133,6 @@ export default async function DashboardPage() {
   }).length;
 
   const totalWOs = openWOs + inProgressWOs + completedWOs;
-  const completionRate = calculateProgressPercent(completedWOs, totalWOs);
   const assetUptime = calculateProgressPercent(activeAssets, totalAssets);
   const pmComplianceRate = calculateProgressPercent(completedWOs, totalWOs);
 
@@ -162,7 +161,7 @@ export default async function DashboardPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-4xl font-black text-slate-900">Operations Overview</h1>
-          <p className="mt-2 text-slate-600">Welcome back! Here's your maintenance snapshot</p>
+          <p className="mt-2 text-slate-600">Welcome back! Here&apos;s your maintenance snapshot</p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -370,51 +369,52 @@ export default async function DashboardPage() {
 
       {/* Recent Work Orders */}
       {recentWOs.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span>📋</span> Recent Work Orders
-            </h3>
-            <Link href="/dashboard/work-orders" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">
-              View All →
-            </Link>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Recent work orders</h3>
+                <p className="mt-1 text-xs text-slate-500">Latest maintenance tasks created in your organization.</p>
+              </div>
+              <Link href="/dashboard/work-orders" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+                View All →
+              </Link>
+            </div>
           </div>
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Title</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Priority</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Created</th>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Priority</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Due Date</th>
+                <th className="px-4 py-3">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentWOs.map((wo) => (
+                <tr key={wo.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 font-medium text-slate-900">
+                    <Link href={`/dashboard/work-orders/${wo.id}`} className="hover:text-indigo-600">
+                      {wo.title}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getPriorityColor(wo.priority)}`}>
+                      {wo.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(wo.status)}`}>
+                      {wo.status.replace("_", " ")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-slate-600 font-medium">{formatDate(wo.due_date ?? "")}</td>
+                  <td className="px-4 py-4 text-xs text-slate-500">{formatDateRelative(wo.created_at)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {recentWOs.map((wo) => (
-                  <tr key={wo.id} className="border-t border-slate-100 hover:bg-slate-50 transition">
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      <Link href={`/dashboard/work-orders/${wo.id}`} className="hover:text-indigo-600">
-                        {wo.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getPriorityColor(wo.priority)}`}>
-                        {wo.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(wo.status)}`}>
-                        {wo.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 font-medium">{formatDate(wo.due_date ?? "")}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{formatDateRelative(wo.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

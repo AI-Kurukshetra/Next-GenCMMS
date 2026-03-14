@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createLocationAction(formData: FormData) {
@@ -92,6 +93,55 @@ export async function deleteLocationAction(formData: FormData) {
 
   if (error) {
     throw new Error(`Failed to delete location: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard/settings");
+}
+
+export async function createTechnicianAction(formData: FormData) {
+  const profile = await requireRole(["admin"]);
+  const serviceRoleClient = createServiceRoleClient();
+
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  if (!fullName || !email || !password) {
+    throw new Error("Full name, email, and password are required.");
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("Please enter a valid email.");
+  }
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  const { data: createdUser, error: createUserError } = await serviceRoleClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: fullName,
+    },
+  });
+
+  if (createUserError || !createdUser.user) {
+    throw new Error(`Failed to create technician login: ${createUserError?.message ?? "Unknown error"}`);
+  }
+
+  const userId = createdUser.user.id;
+  const { error: profileError } = await serviceRoleClient.from("profiles").insert({
+    id: userId,
+    organization_id: profile.organization_id,
+    role: "technician",
+    full_name: fullName,
+    phone: phone || null,
+  });
+
+  if (profileError) {
+    await serviceRoleClient.auth.admin.deleteUser(userId);
+    throw new Error(`Failed to create technician profile: ${profileError.message}`);
   }
 
   revalidatePath("/dashboard/settings");

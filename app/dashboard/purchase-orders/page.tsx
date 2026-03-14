@@ -2,11 +2,32 @@ import Link from "next/link";
 import {
   createPurchaseOrderAction,
   deletePurchaseOrderAction,
-  updatePurchaseOrderStatusAction,
 } from "@/app/dashboard/purchase-orders/actions";
+import { FilterForm } from "@/components/filter-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
+
+type PurchaseOrderRecord = {
+  id: string;
+  po_number: string;
+  status: string;
+  order_date: string;
+  expected_date: string | null;
+  total_amount: number | string | null;
+  notes: string | null;
+  vendor_id: string | null;
+  vendors:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
 
 export default async function PurchaseOrdersPage({
   searchParams,
@@ -41,8 +62,17 @@ export default async function PurchaseOrdersPage({
     query,
     supabase.from("vendors").select("id,name").eq("organization_id", profile.organization_id).order("name"),
   ]);
+  const purchaseOrders = (pos ?? []) as PurchaseOrderRecord[];
 
   const statusOptions = ["draft", "sent", "received", "cancelled"];
+
+  function getVendorName(po: PurchaseOrderRecord) {
+    if (Array.isArray(po.vendors)) {
+      return po.vendors[0]?.name ?? null;
+    }
+
+    return po.vendors?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -51,31 +81,36 @@ export default async function PurchaseOrdersPage({
         <p className="mt-2 text-slate-600">Create and track purchase orders for parts and services</p>
       </div>
 
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <input name="q" defaultValue={q} placeholder="Search PO number" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        <select name="status" defaultValue={status} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          {statusOptions.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select name="vendor_id" defaultValue={vendor_id} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All vendors</option>
-          {vendors?.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Filter
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'q',
+            label: 'Search',
+            type: 'text',
+            placeholder: 'Search PO number',
+          },
+          {
+            name: 'status',
+            label: 'All statuses',
+            type: 'select',
+            options: statusOptions.map((s) => ({ value: s, label: s })),
+          },
+          {
+            name: 'vendor_id',
+            label: 'All vendors',
+            type: 'select',
+            options: vendors?.map((v) => ({ value: v.id, label: v.name })) || [],
+          },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={createPurchaseOrderAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+        <ServerActionForm
+          action={createPurchaseOrderAction}
+          resetOnSuccess
+          successMessage="Purchase order created successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
           <h3 className="text-base font-bold text-slate-900">Create PO</h3>
           <select name="vendor_id" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             <option value="">Select vendor *</option>
@@ -89,58 +124,67 @@ export default async function PurchaseOrdersPage({
           <input name="order_date" type="date" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <input name="expected_date" type="date" placeholder="Expected delivery" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea name="notes" placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Creating..."
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
             Create
-          </button>
-        </form>
+          </FormSubmitButton>
+        </ServerActionForm>
 
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Purchase orders</h4>
+                <p className="mt-1 text-xs text-slate-500">Create and track purchase orders for parts and services</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {purchaseOrders.length} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">PO Number</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Vendor</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Order Date</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
+                <th className="px-4 py-3">PO Number</th>
+                <th className="px-4 py-3">Vendor</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Order Date</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {pos?.length ? (
-                pos.map((po: any) => (
-                  <tr key={po.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium">
+            <tbody>
+              {purchaseOrders.length ? (
+                purchaseOrders.map((po) => (
+                  <tr key={po.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-4 py-4 font-medium">
                       <Link href={`/dashboard/purchase-orders/${po.id}`} className="text-indigo-600 hover:underline">
                         {po.po_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{po.vendors?.name || "-"}</td>
-                    <td className="px-4 py-3">
-                      <form action={updatePurchaseOrderStatusAction} className="flex gap-1">
-                        <input type="hidden" name="id" value={po.id} />
-                        <select name="status" defaultValue={po.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
-                          {statusOptions.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">
-                          Update
-                        </button>
-                      </form>
+                    <td className="px-4 py-4 text-slate-600">{getVendorName(po) || "-"}</td>
+                    <td className="px-4 py-4">
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                        {po.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{formatDate(po.order_date)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-4 py-4 text-slate-600">{formatDate(po.order_date)}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end items-center gap-2">
                         <Link href={`/dashboard/purchase-orders/${po.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">
                           View
                         </Link>
                         <form action={deletePurchaseOrderAction}>
                           <input type="hidden" name="id" value={po.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

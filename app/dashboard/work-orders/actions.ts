@@ -8,6 +8,22 @@ export async function createWorkOrderAction(formData: FormData) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
+  const assignedTo = String(formData.get("assigned_to") ?? "").trim();
+
+  if (assignedTo) {
+    const { data: technician } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", assignedTo)
+      .eq("organization_id", profile.organization_id)
+      .eq("role", "technician")
+      .maybeSingle();
+
+    if (!technician) {
+      throw new Error("Selected technician is invalid.");
+    }
+  }
+
   const payload = {
     organization_id: profile.organization_id,
     location_id: String(formData.get("location_id") ?? ""),
@@ -16,9 +32,9 @@ export async function createWorkOrderAction(formData: FormData) {
     description: String(formData.get("description") ?? "").trim() || null,
     priority: String(formData.get("priority") ?? "medium"),
     maintenance_type: String(formData.get("maintenance_type") ?? "corrective"),
-    assigned_to: String(formData.get("assigned_to") ?? "") || null,
+    assigned_to: assignedTo || null,
     due_date: String(formData.get("due_date") ?? "") || null,
-    status: "open",
+    status: assignedTo ? "assigned" : "open",
     created_by: profile.id,
   };
 
@@ -70,13 +86,38 @@ export async function updateWorkOrderAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const priority = String(formData.get("priority") ?? "medium");
-  const assigned_to = String(formData.get("assigned_to") ?? "") || null;
+  const assignedTo = String(formData.get("assigned_to") ?? "").trim();
   const due_date = String(formData.get("due_date") ?? "") || null;
   const maintenance_type = String(formData.get("maintenance_type") ?? "corrective");
 
   if (!id || !title || !location_id || !asset_id) {
     throw new Error("Work order ID, title, location, and asset are required.");
   }
+  if (assignedTo) {
+    const { data: technician } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", assignedTo)
+      .eq("organization_id", profile.organization_id)
+      .eq("role", "technician")
+      .maybeSingle();
+
+    if (!technician) {
+      throw new Error("Selected technician is invalid.");
+    }
+  }
+
+  const { data: existingWorkOrder } = await supabase
+    .from("work_orders")
+    .select("status")
+    .eq("id", id)
+    .eq("organization_id", profile.organization_id)
+    .maybeSingle();
+
+  const nextStatus =
+    assignedTo && existingWorkOrder?.status === "open"
+      ? "assigned"
+      : existingWorkOrder?.status;
 
   const { error } = await supabase
     .from("work_orders")
@@ -86,9 +127,10 @@ export async function updateWorkOrderAction(formData: FormData) {
       asset_id,
       description: description || null,
       priority,
-      assigned_to,
+      assigned_to: assignedTo || null,
       due_date,
       maintenance_type,
+      status: nextStatus,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

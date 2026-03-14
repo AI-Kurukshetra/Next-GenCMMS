@@ -15,10 +15,16 @@ export async function createClient() {
         return cookieStore.get(name)?.value;
       },
       set(name: string, value: string, options) {
-        cookieStore.set({ name, value, ...options });
+        // In Server Components, cookie writes are not allowed; middleware/actions handle refresh writes.
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {}
       },
       remove(name: string, options) {
-        cookieStore.set({ name, value: "", ...options });
+        // In Server Components, cookie writes are not allowed; middleware/actions handle refresh writes.
+        try {
+          cookieStore.set({ name, value: "", ...options });
+        } catch {}
       },
     },
   });

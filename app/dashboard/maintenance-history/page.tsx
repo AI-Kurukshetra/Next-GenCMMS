@@ -1,6 +1,32 @@
+import { FilterForm } from "@/components/filter-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
+
+type MaintenanceHistoryRow = {
+  id: string;
+  asset_id: string;
+  event_type: string;
+  event_data: unknown;
+  performed_by: string | null;
+  created_at: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+  performer:
+    | {
+        full_name: string | null;
+      }
+    | {
+        full_name: string | null;
+      }[]
+    | null;
+};
 
 export default async function MaintenanceHistoryPage({
   searchParams,
@@ -44,11 +70,19 @@ export default async function MaintenanceHistoryPage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
+  const historyRows = (history ?? []) as MaintenanceHistoryRow[];
 
   // Get unique event types
   const eventTypes = Array.from(
-    new Set((history || []).map((h) => h.event_type))
+    new Set(historyRows.map((h) => h.event_type))
   );
+
+  function getSingleRelation<T>(relation: T | T[] | null): T | null {
+    if (Array.isArray(relation)) {
+      return relation[0] ?? null;
+    }
+    return relation ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -57,54 +91,61 @@ export default async function MaintenanceHistoryPage({
         <p className="mt-2 text-slate-600">Complete audit trail of all maintenance activities</p>
       </div>
 
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <select name="asset_id" defaultValue={assetId} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All assets</option>
-          {assets?.map((asset) => (
-            <option key={asset.id} value={asset.id}>
-              {asset.name}
-            </option>
-          ))}
-        </select>
-        <select name="event_type" defaultValue={eventType} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All event types</option>
-          {eventTypes.map((type) => (
-            <option key={type} value={type}>
-              {type.replace("_", " ")}
-            </option>
-          ))}
-        </select>
-        <div className="col-span-2">
-          <button type="submit" className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-            Filter
-          </button>
-        </div>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'asset_id',
+            label: 'All assets',
+            type: 'select',
+            options: assets?.map((a) => ({ value: a.id, label: a.name })) || [],
+          },
+          {
+            name: 'event_type',
+            label: 'All event types',
+            type: 'select',
+            options: eventTypes.map((type) => ({ value: type, label: type.replace("_", " ") })),
+          },
+        ]}
+      />
 
-      <div className="rounded-xl border border-slate-200 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">History records</h4>
+              <p className="mt-1 text-xs text-slate-500">Audit trail of maintenance events and updates</p>
+            </div>
+            <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+              {historyRows.length} total
+            </div>
+          </div>
+        </div>
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Asset</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Event Type</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Details</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Performed By</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
+              <th className="px-4 py-3">Asset</th>
+              <th className="px-4 py-3">Event Type</th>
+              <th className="px-4 py-3">Details</th>
+              <th className="px-4 py-3">Performed By</th>
+              <th className="px-4 py-3">Date</th>
             </tr>
           </thead>
           <tbody>
-            {history?.length ? (
-              history.map((h: any) => (
-                <tr key={h.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{h.assets?.name || "Unknown"}</td>
-                  <td className="px-4 py-3 capitalize text-slate-700">{h.event_type.replace("_", " ")}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">
-                    {typeof h.event_data === "object"
-                      ? JSON.stringify(h.event_data).substring(0, 50) + "..."
-                      : h.event_data || "-"}
+            {historyRows.length ? (
+              historyRows.map((h) => (
+                <tr key={h.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 font-medium text-slate-900">{getSingleRelation(h.assets)?.name || "Unknown"}</td>
+                  <td className="px-4 py-4 capitalize text-slate-700">{h.event_type.replace("_", " ")}</td>
+                  <td className="px-4 py-4 text-xs text-slate-600">
+                    {(() => {
+                      if (typeof h.event_data === "object" && h.event_data !== null) {
+                        return JSON.stringify(h.event_data).substring(0, 50) + "...";
+                      }
+                      return h.event_data ? String(h.event_data) : "-";
+                    })()}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{h.performer?.full_name || "-"}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDateRelative(h.created_at)}</td>
+                  <td className="px-4 py-4 text-slate-600">{getSingleRelation(h.performer)?.full_name || "-"}</td>
+                  <td className="px-4 py-4 text-xs text-slate-500">{h.created_at ? formatDateRelative(h.created_at) : "Date unknown"}</td>
                 </tr>
               ))
             ) : (

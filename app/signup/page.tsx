@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signUpAction } from "@/app/signup/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SignupPage({
@@ -150,13 +151,14 @@ export default async function SignupPage({
               />
             </div>
 
-            <button
+            <FormSubmitButton
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              pendingText="Creating Account..."
+              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 font-semibold text-white shadow-lg transition hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Create account"
             >
               Create Account
-            </button>
+            </FormSubmitButton>
           </form>
 
           {/* Divider */}

@@ -1,8 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { hasSupabaseEnv } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  if (hasSupabaseEnv()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      redirect("/dashboard");
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900">
       {/* Background elements */}

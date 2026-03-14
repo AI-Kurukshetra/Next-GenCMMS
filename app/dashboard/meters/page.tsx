@@ -1,14 +1,29 @@
 import Link from "next/link";
-import { createMeterAction, deleteMeterAction, updateMeterAction } from "@/app/dashboard/meters/actions";
+import { createMeterAction, deleteMeterAction } from "@/app/dashboard/meters/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
 
-export default async function MetersPage({
-  searchParams,
-}: {
-  searchParams?: { edit_id?: string };
-}) {
+type MeterRecord = {
+  id: string;
+  asset_id: string;
+  meter_type: string;
+  unit: string;
+  current_reading: number | string | null;
+  last_recorded_at: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
+
+export default async function MetersPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -25,8 +40,15 @@ export default async function MetersPage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
-  const editId = (searchParams?.edit_id ?? "").trim();
-  const editingMeter = meters?.find((meter) => meter.id === editId);
+  const meterRows = (meters ?? []) as MeterRecord[];
+
+  function getAssetName(meter: MeterRecord) {
+    if (Array.isArray(meter.assets)) {
+      return meter.assets[0]?.name ?? null;
+    }
+
+    return meter.assets?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -36,12 +58,15 @@ export default async function MetersPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingMeter ? updateMeterAction : createMeterAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
-          <h3 className="text-base font-bold text-slate-900">{editingMeter ? "Edit Meter" : "Create Meter"}</h3>
-          {editingMeter && <input type="hidden" name="id" value={editingMeter.id} />}
+        <ServerActionForm
+          action={createMeterAction}
+          resetOnSuccess
+          successMessage="Meter created successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
+          <h3 className="text-base font-bold text-slate-900">Create Meter</h3>
           <select
             name="asset_id"
-            defaultValue={editingMeter?.asset_id ?? ""}
             required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
@@ -52,7 +77,7 @@ export default async function MetersPage({
               </option>
             ))}
           </select>
-          <select name="meter_type" defaultValue={editingMeter?.meter_type ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <select name="meter_type" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             <option value="">Meter type *</option>
             <option value="hours">Hours</option>
             <option value="cycles">Cycles</option>
@@ -62,7 +87,6 @@ export default async function MetersPage({
           <input
             name="unit"
             required
-            defaultValue={editingMeter?.unit ?? ""}
             placeholder="Unit (e.g., hrs, km) *"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
@@ -71,50 +95,66 @@ export default async function MetersPage({
             type="number"
             min="0"
             step="0.01"
-            defaultValue={editingMeter?.current_reading ?? ""}
             placeholder="Initial reading"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
-            {editingMeter ? "Update Meter" : "Create Meter"}
-          </button>
-          {editingMeter && (
-            <Link href="/dashboard/meters" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-              Cancel Edit
-            </Link>
-          )}
-        </form>
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
+            Create Meter
+          </FormSubmitButton>
+        </ServerActionForm>
 
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Equipment meters</h4>
+                <p className="mt-1 text-xs text-slate-500">Track equipment operating hours and cycles</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {meterRows.length} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Asset</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Type</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Current Reading</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Last Updated</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Action</th>
+                <th className="px-4 py-3">Asset</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Current Reading</th>
+                <th className="px-4 py-3">Last Updated</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {meters?.length ? (
-                meters.map((meter: any) => (
-                  <tr key={meter.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{meter.assets?.name}</td>
-                    <td className="px-4 py-3 capitalize text-slate-600">{meter.meter_type}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
+            <tbody>
+              {meterRows.length ? (
+                meterRows.map((meter) => (
+                  <tr key={meter.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-4 py-4 font-medium text-slate-900">{getAssetName(meter) || "-"}</td>
+                    <td className="px-4 py-4 capitalize text-slate-600">{meter.meter_type}</td>
+                    <td className="px-4 py-4 font-semibold text-slate-900">
                       {meter.current_reading ?? "-"} {meter.unit}
                     </td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">
+                    <td className="px-4 py-4 text-slate-500 text-xs">
                       {meter.last_recorded_at ? formatDateRelative(meter.last_recorded_at) : "Never"}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/meters/${meter.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteMeterAction}>
                           <input type="hidden" name="id" value={meter.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

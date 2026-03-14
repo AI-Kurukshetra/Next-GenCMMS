@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
 
 export default function OnboardingPage({
   searchParams,
@@ -92,12 +93,13 @@ export default function OnboardingPage({
               </div>
             )}
 
-            <button
+            <FormSubmitButton
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95"
+              pendingText="Setting Up..."
+              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 font-semibold text-white shadow-lg transition hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl active:scale-95"
             >
               Set Up Workspace
-            </button>
+            </FormSubmitButton>
           </form>
 
           {/* Info Cards */}

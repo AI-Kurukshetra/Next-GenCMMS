@@ -1,23 +1,42 @@
+import Link from "next/link";
 import {
   createComplianceRecordAction,
   deleteComplianceRecordAction,
-  updateComplianceRecordAction,
-  updateComplianceStatusAction,
 } from "@/app/dashboard/compliance/actions";
+import { FilterForm } from "@/components/filter-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 
+type ComplianceRecord = {
+  id: string;
+  asset_id: string;
+  inspection_type: string;
+  status: string;
+  due_date: string;
+  completed_date: string | null;
+  notes: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
+
 export default async function CompliancePage({
   searchParams,
 }: {
-  searchParams?: { status?: string; edit_id?: string };
+  searchParams?: { status?: string };
 }) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
   const statusFilter = (searchParams?.status ?? "").trim();
-  const editId = (searchParams?.edit_id ?? "").trim();
 
   let query = supabase
     .from("compliance_records")
@@ -47,14 +66,22 @@ export default async function CompliancePage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
+  const complianceRecords = (records ?? []) as ComplianceRecord[];
 
   // Calculate stats
-  const total = records?.length || 0;
-  const pending = records?.filter((r: any) => r.status === "pending").length || 0;
-  const passed = records?.filter((r: any) => r.status === "passed").length || 0;
-  const failed = records?.filter((r: any) => r.status === "failed").length || 0;
-  const overdue = records?.filter((r: any) => r.status === "overdue").length || 0;
-  const editingRecord = records?.find((record: any) => record.id === editId);
+  const total = complianceRecords.length;
+  const pending = complianceRecords.filter((r) => r.status === "pending").length;
+  const passed = complianceRecords.filter((r) => r.status === "passed").length;
+  const failed = complianceRecords.filter((r) => r.status === "failed").length;
+  const overdue = complianceRecords.filter((r) => r.status === "overdue").length;
+
+  function getAssetName(record: ComplianceRecord) {
+    if (Array.isArray(record.assets)) {
+      return record.assets[0]?.name ?? null;
+    }
+
+    return record.assets?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -88,26 +115,32 @@ export default async function CompliancePage({
       </div>
 
       {/* Filter */}
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <select name="status" defaultValue={statusFilter} className="rounded-lg border border-slate-300 px-3 py-2 text-sm col-span-3">
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="overdue">Overdue</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Filter
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'status',
+            label: 'All statuses',
+            type: 'select',
+            options: [
+              { value: 'pending', label: 'Pending' },
+              { value: 'passed', label: 'Passed' },
+              { value: 'failed', label: 'Failed' },
+              { value: 'overdue', label: 'Overdue' },
+            ],
+          },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingRecord ? updateComplianceRecordAction : createComplianceRecordAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
-          <h3 className="text-base font-bold text-slate-900">{editingRecord ? "Edit Record" : "Create Record"}</h3>
-          {editingRecord && <input type="hidden" name="id" value={editingRecord.id} />}
+        <ServerActionForm
+          action={createComplianceRecordAction}
+          resetOnSuccess
+          successMessage="Compliance record created successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
+          <h3 className="text-base font-bold text-slate-900">Create Record</h3>
           <select
             name="asset_id"
-            defaultValue={editingRecord?.asset_id ?? ""}
             required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
@@ -120,62 +153,69 @@ export default async function CompliancePage({
           </select>
           <input
             name="inspection_type"
-            defaultValue={editingRecord?.inspection_type ?? ""}
             required
             placeholder="Inspection type *"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <input name="due_date" type="date" defaultValue={editingRecord?.due_date ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <textarea name="notes" defaultValue={editingRecord?.notes ?? ""} placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
-            {editingRecord ? "Update" : "Create"}
-          </button>
-          {editingRecord && (
-            <a href="/dashboard/compliance" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
-              Cancel Edit
-            </a>
-          )}
-        </form>
+          <input name="due_date" type="date" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <textarea name="notes" placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
+            Create
+          </FormSubmitButton>
+        </ServerActionForm>
 
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Compliance records</h4>
+                <p className="mt-1 text-xs text-slate-500">Safety inspections and compliance tracking</p>
+              </div>
+              <div className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                {complianceRecords.length} total
+              </div>
+            </div>
+          </div>
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Asset</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Inspection</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Due Date</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                <th className="px-4 py-3">Asset</th>
+                <th className="px-4 py-3">Inspection</th>
+                <th className="px-4 py-3">Due Date</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {records?.length ? (
-                records.map((record: any) => (
-                  <tr key={record.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{record.assets?.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{record.inspection_type}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatDate(record.due_date)}</td>
-                    <td className="px-4 py-3">
-                      <form action={updateComplianceStatusAction} className="flex gap-1">
-                        <input type="hidden" name="id" value={record.id} />
-                        <select name="status" defaultValue={record.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
-                          <option value="pending">Pending</option>
-                          <option value="passed">Passed</option>
-                          <option value="failed">Failed</option>
-                          <option value="overdue">Overdue</option>
-                        </select>
-                        <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">
-                          Status
-                        </button>
-                      </form>
+            <tbody>
+              {complianceRecords.length ? (
+                complianceRecords.map((record) => (
+                  <tr key={record.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-4 py-4 font-medium text-slate-900">{getAssetName(record) || "-"}</td>
+                    <td className="px-4 py-4 text-slate-600">{record.inspection_type}</td>
+                    <td className="px-4 py-4 text-slate-600">{formatDate(record.due_date)}</td>
+                    <td className="px-4 py-4">
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                        {record.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end gap-2">
+                        <Link href={`/dashboard/compliance/${record.id}`} className="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                          View
+                        </Link>
                         <form action={deleteComplianceRecordAction}>
                           <input type="hidden" name="id" value={record.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

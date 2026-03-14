@@ -157,6 +157,62 @@ export async function uploadAssetImageAction(formData: FormData) {
   revalidatePath(`/dashboard/assets/${assetId}`);
 }
 
+export async function deleteAssetImageAction(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const documentId = String(formData.get("document_id") ?? "").trim();
+  const assetId = String(formData.get("asset_id") ?? "").trim();
+
+  if (!documentId || !assetId) {
+    throw new Error("Document ID and asset ID are required.");
+  }
+
+  const { data: asset, error: assetError } = await supabase
+    .from("assets")
+    .select("id")
+    .eq("id", assetId)
+    .eq("organization_id", profile.organization_id)
+    .maybeSingle();
+
+  if (assetError || !asset) {
+    throw new Error("Asset not found.");
+  }
+
+  const { data: document, error: documentError } = await supabase
+    .from("documents")
+    .select("id,bucket,path,entity_id")
+    .eq("id", documentId)
+    .eq("organization_id", profile.organization_id)
+    .eq("entity_type", "asset")
+    .eq("entity_id", assetId)
+    .maybeSingle();
+
+  if (documentError || !document) {
+    throw new Error("Image not found.");
+  }
+
+  const storageClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const { error: removeError } = await storageClient.storage.from(document.bucket).remove([document.path]);
+
+  if (removeError && !removeError.message.toLowerCase().includes("not found")) {
+    throw new Error(`Failed to delete image file: ${removeError.message}`);
+  }
+
+  const { error: deleteError } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", document.id)
+    .eq("organization_id", profile.organization_id);
+
+  if (deleteError) {
+    throw new Error(`Failed to delete image record: ${deleteError.message}`);
+  }
+
+  revalidatePath("/dashboard/assets");
+  revalidatePath(`/dashboard/assets/${assetId}`);
+}
+
 export async function generateQRTokenAction(formData: FormData) {
   const profile = await requireProfile();
   const supabase = await createClient();
