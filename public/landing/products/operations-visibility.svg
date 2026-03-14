@@ -1,0 +1,16 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700' viewBox='0 0 1200 700'>
+  <defs>
+    <linearGradient id='g3' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#f8fbff'/>
+      <stop offset='100%' stop-color='#dbeafe'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='700' fill='url(#g3)'/>
+  <rect x='90' y='90' width='1020' height='520' rx='26' fill='#ffffff' stroke='#bfdbfe' stroke-width='4'/>
+  <rect x='140' y='150' width='300' height='140' rx='16' fill='#0f62fe'/>
+  <rect x='470' y='150' width='300' height='140' rx='16' fill='#2563eb'/>
+  <rect x='800' y='150' width='260' height='140' rx='16' fill='#3b82f6'/>
+  <polyline points='160,520 270,420 360,460 470,350 560,390 670,280 760,330 870,240 1010,300' fill='none' stroke='#0f62fe' stroke-width='12'/>
+  <text x='140' y='340' font-family='Segoe UI, Arial' font-size='44' font-weight='700' fill='#102040'>Operations Visibility</text>
+  <text x='140' y='390' font-family='Segoe UI, Arial' font-size='28' fill='#334e78'>Unified dashboard for uptime, PM compliance, and costs</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700' viewBox='0 0 1200 700'>
+  <rect width='1200' height='700' fill='#101828'/>
+  <rect x='80' y='70' width='1040' height='560' rx='28' fill='#1f2937'/>
+  <rect x='140' y='130' width='420' height='440' rx='24' fill='#0f62fe'/>
+  <rect x='620' y='140' width='420' height='120' rx='16' fill='#f8fafc'/>
+  <rect x='620' y='290' width='420' height='120' rx='16' fill='#f8fafc'/>
+  <rect x='620' y='440' width='420' height='120' rx='16' fill='#f8fafc'/>
+  <text x='170' y='220' font-family='Segoe UI, Arial' font-size='40' font-weight='700' fill='#ffffff'>Field Execution</text>
+  <text x='170' y='272' font-family='Segoe UI, Arial' font-size='24' fill='#dbeafe'>Mobile work orders, status updates, and time logs</text>
+</svg>

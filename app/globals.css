@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -50px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.9); }
+  75% { transform: translate(50px, 50px) scale(1.05); }
+}
+
+@layer utilities {
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+}
+
+:root {
+  --bg: #eef2f7;
+  --bg-soft: #f7f9fc;
+  --surface: #ffffff;
+  --surface-2: #f8fbff;
+  --text: #0f1b2f;
+  --text-muted: #4a5a74;
+  --line: #dbe4f1;
+  --brand: #0f62fe;
+  --brand-2: #1f8ef1;
+  --brand-contrast: #ffffff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 8px 20px rgba(15, 27, 47, 0.06);
+  --shadow-md: 0 16px 36px rgba(15, 27, 47, 0.1);
+  --hero-gradient: radial-gradient(circle at 0% 0%, #dbe8ff, #f7f9fc 45%);
+  --brand-gradient: linear-gradient(135deg, #0f62fe 0%, #1f8ef1 100%);
+}
+
+body {
+  background: var(--hero-gradient);
+  color: var(--text);
+  min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+@layer components {
+  .ui-container {
+    @apply mx-auto w-full max-w-7xl px-6 md:px-10;
+  }
+
+  .ui-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ui-card-soft {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+
+  .ui-btn {
+    @apply inline-flex items-center justify-center font-semibold transition;
+    border-radius: var(--radius-sm);
+  }
+
+  .ui-btn-primary {
+    @apply ui-btn text-white;
+    background: var(--brand-gradient);
+  }
+
+  .ui-btn-primary:hover {
+    filter: brightness(0.95);
+  }
+
+  .ui-btn-ghost {
+    @apply ui-btn;
+    color: var(--text);
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .ui-btn-ghost:hover {
+    background: var(--bg-soft);
+  }
+
+  .ui-chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em];
+    background: #eaf1ff;
+    color: var(--brand);
+  }
+}
