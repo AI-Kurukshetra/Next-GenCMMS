@@ -1,11 +1,20 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatDateRelative } from "@/lib/utils";
-import { generateQRTokenAction, updateAssetAction, uploadAssetImageAction } from "@/app/dashboard/assets/actions";
+import {
+  deleteAssetImageAction,
+  generateQRTokenAction,
+  updateAssetAction,
+  uploadAssetImageAction,
+} from "@/app/dashboard/assets/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 
 type AssetDocument = {
   id: string;
+  bucket: string;
   path: string;
   mime_type: string | null;
   created_at: string | null;
@@ -66,14 +75,16 @@ export default async function AssetDetailPage({ params }: { params: { id: string
   const qrCodeUrl = qrCode
     ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/scan/${qrCode.qr_token}`)}`
     : null;
+  const storageClient = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
   const signedDocuments = await Promise.all(
     (documents ?? []).map(async (doc) => {
-      const { data, error } = await supabase.storage.from(doc.bucket).createSignedUrl(doc.path, 60);
+      const { data, error } = await storageClient.storage.from(doc.bucket).createSignedUrl(doc.path, 3600);
       if (error || !data?.signedUrl) {
         return null;
       }
       return {
         id: doc.id,
+        bucket: doc.bucket,
         path: doc.path,
         mime_type: doc.mime_type,
         created_at: doc.created_at,
@@ -130,7 +141,11 @@ export default async function AssetDetailPage({ params }: { params: { id: string
             </div>
           </div>
 
-          <form action={updateAssetAction} className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+          <ServerActionForm
+            action={updateAssetAction}
+            successMessage="Asset updated successfully."
+            className="rounded-xl border border-slate-200 bg-slate-50 p-6"
+          >
             <h3 className="text-lg font-bold text-slate-900 mb-4">Edit Asset</h3>
             <input type="hidden" name="id" value={asset.id} />
             <div className="grid grid-cols-2 gap-3">
@@ -153,10 +168,14 @@ export default async function AssetDetailPage({ params }: { params: { id: string
                 ))}
               </select>
             </div>
-            <button type="submit" className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Saving..."
+              className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
               Save Changes
-            </button>
-          </form>
+            </FormSubmitButton>
+          </ServerActionForm>
 
           <div className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -172,22 +191,55 @@ export default async function AssetDetailPage({ params }: { params: { id: string
                   alt={asset.name}
                   className="h-72 w-full rounded-xl border border-slate-200 object-cover"
                 />
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                  <p className="text-sm text-slate-600">
+                    Latest upload {primaryImage.created_at ? formatDateRelative(primaryImage.created_at) : "recently"}
+                  </p>
+                  <form action={deleteAssetImageAction}>
+                    <input type="hidden" name="asset_id" value={asset.id} />
+                    <input type="hidden" name="document_id" value={primaryImage.id} />
+                    <FormSubmitButton
+                      type="submit"
+                      pendingText="Deleting..."
+                      className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                    >
+                      Delete Image
+                    </FormSubmitButton>
+                  </form>
+                </div>
                 {assetImages.length > 1 ? (
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    {assetImages.map((image) => (
-                      <a
-                        key={image.id}
-                        href={image.downloadUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
-                      >
-                        <img
-                          src={image.downloadUrl}
-                          alt={asset.name}
-                          className="h-24 w-full object-cover"
-                        />
-                      </a>
+                    {assetImages.slice(1).map((image) => (
+                      <div key={image.id} className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                        <a
+                          href={image.downloadUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block"
+                        >
+                          <img
+                            src={image.downloadUrl}
+                            alt={asset.name}
+                            className="h-24 w-full object-cover"
+                          />
+                        </a>
+                        <div className="space-y-2 p-2">
+                          <p className="text-[11px] text-slate-500">
+                            {image.created_at ? formatDateRelative(image.created_at) : "Uploaded"}
+                          </p>
+                          <form action={deleteAssetImageAction}>
+                            <input type="hidden" name="asset_id" value={asset.id} />
+                            <input type="hidden" name="document_id" value={image.id} />
+                            <FormSubmitButton
+                              type="submit"
+                              pendingText="Deleting..."
+                              className="w-full rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                            >
+                              Delete
+                            </FormSubmitButton>
+                          </form>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : null}
@@ -219,7 +271,13 @@ export default async function AssetDetailPage({ params }: { params: { id: string
 
         {/* QR Code Sidebar */}
         <div className="space-y-6">
-          <form action={uploadAssetImageAction} encType="multipart/form-data" className="rounded-xl border border-slate-200 bg-slate-50 p-6 h-fit">
+          <ServerActionForm
+            action={uploadAssetImageAction}
+            resetOnSuccess
+            successMessage="Image uploaded successfully."
+            encType="multipart/form-data"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-6 h-fit"
+          >
             <h3 className="text-lg font-bold text-slate-900 mb-4">Upload Image</h3>
             <input type="hidden" name="asset_id" value={asset.id} />
             <input
@@ -229,10 +287,14 @@ export default async function AssetDetailPage({ params }: { params: { id: string
               required
               className="w-full cursor-pointer rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-600"
             />
-            <button type="submit" className="mt-3 w-full rounded-lg bg-slate-900 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Uploading..."
+              className="mt-3 w-full rounded-lg bg-slate-900 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            >
               Upload Image
-            </button>
-          </form>
+            </FormSubmitButton>
+          </ServerActionForm>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 h-fit">
             <h3 className="text-lg font-bold text-slate-900 mb-4">QR Code</h3>
@@ -256,12 +318,13 @@ export default async function AssetDetailPage({ params }: { params: { id: string
                 <p className="text-sm text-slate-600">No QR code generated yet</p>
                 <form action={generateQRTokenAction} className="space-y-2">
                   <input type="hidden" name="asset_id" value={asset.id} />
-                  <button
+                  <FormSubmitButton
                     type="submit"
-                    className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700"
+                    pendingText="Generating..."
+                    className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
                   >
                     Generate QR Code
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
             )}

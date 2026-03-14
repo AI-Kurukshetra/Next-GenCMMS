@@ -5,6 +5,8 @@ import {
   updateOrgNameAction,
 } from "@/app/dashboard/settings/actions";
 import Link from "next/link";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +36,11 @@ export default async function SettingsPage({
       {/* Organization Settings */}
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
         <h3 className="text-lg font-bold text-slate-900">Organization</h3>
-        <form action={updateOrgNameAction} className="mt-4 space-y-3">
+        <ServerActionForm
+          action={updateOrgNameAction}
+          successMessage="Organization updated successfully."
+          className="mt-4 space-y-3"
+        >
           <div>
             <label className="text-sm text-slate-600">Name</label>
             <input
@@ -44,10 +50,14 @@ export default async function SettingsPage({
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
             />
           </div>
-          <button type="submit" className="rounded-lg bg-indigo-600 text-white font-semibold py-2 px-4 hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Saving..."
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
             Update Organization
-          </button>
-        </form>
+          </FormSubmitButton>
+        </ServerActionForm>
       </div>
 
       {/* Locations */}
@@ -67,9 +77,13 @@ export default async function SettingsPage({
                   <div className="flex gap-2">
                     <form action={deleteLocationAction}>
                       <input type="hidden" name="id" value={loc.id} />
-                      <button type="submit" className="rounded bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                      <FormSubmitButton
+                        type="submit"
+                        pendingText="Deleting..."
+                        className="rounded bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                      >
                         Delete
-                      </button>
+                      </FormSubmitButton>
                     </form>
                   </div>
                 </div>
@@ -80,7 +94,12 @@ export default async function SettingsPage({
           )}
         </div>
         <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-          <form action={editingLocation ? updateLocationAction : createLocationAction} className="space-y-3">
+          <ServerActionForm
+            action={editingLocation ? updateLocationAction : createLocationAction}
+            resetOnSuccess={!editingLocation}
+            successMessage={editingLocation ? "Location updated successfully." : "Location added successfully."}
+            className="space-y-3"
+          >
             <h4 className="font-semibold text-slate-900">{editingLocation ? "Edit Location" : "Add Location"}</h4>
             {editingLocation && <input type="hidden" name="id" value={editingLocation.id} />}
             <input
@@ -96,15 +115,19 @@ export default async function SettingsPage({
               placeholder="Location code"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
-            <button type="submit" className="rounded-lg bg-indigo-600 text-white font-semibold py-2 px-4 hover:bg-indigo-700 text-sm">
+            <FormSubmitButton
+              type="submit"
+              pendingText={editingLocation ? "Updating..." : "Saving..."}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
               {editingLocation ? "Update Location" : "Add Location"}
-            </button>
+            </FormSubmitButton>
             {editingLocation && (
               <Link href="/dashboard/settings" className="ml-3 text-xs font-semibold text-slate-600 hover:text-slate-900">
                 Cancel Edit
               </Link>
             )}
-          </form>
+          </ServerActionForm>
         </div>
       </div>
 

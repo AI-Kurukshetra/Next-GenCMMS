@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, MouseEvent, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { UserRole } from "@/lib/auth";
 
 const navItems = [
@@ -37,6 +38,7 @@ export function DashboardShell({
   unreadNotifications?: number;
 }) {
   const pathname = usePathname();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const roleDisplay: Record<UserRole, string> = {
     admin: "Administrator",
@@ -50,6 +52,28 @@ export function DashboardShell({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  function handleNavClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      href === pathname ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    setPendingHref(href);
+  }
+
+  const isNavigating = Boolean(pendingHref && pendingHref !== pathname);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900">
@@ -72,11 +96,14 @@ export function DashboardShell({
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              const isPending = pendingHref === item.href;
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={(event) => handleNavClick(item.href, event)}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                     isActive
                       ? "bg-indigo-600 text-white"
@@ -84,7 +111,13 @@ export function DashboardShell({
                   }`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {isPending ? (
+                    <span
+                      aria-hidden="true"
+                      className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin"
+                    />
+                  ) : null}
                 </Link>
               );
             })}
@@ -101,21 +134,29 @@ export function DashboardShell({
               </div>
             </div>
             <form action={signOutAction} className="mt-4">
-              <button
+              <FormSubmitButton
                 type="submit"
+                pendingText="Signing Out..."
                 className="w-full rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition"
               >
                 Sign Out
-              </button>
+              </FormSubmitButton>
             </form>
           </div>
         </aside>
 
         {/* Main Content */}
         <main className="p-4 md:p-8">
+          {isNavigating ? (
+            <div className="mb-4 overflow-hidden rounded-full bg-slate-800/70">
+              <div className="h-1 w-full origin-left animate-pulse bg-gradient-to-r from-indigo-500 via-sky-400 to-indigo-500" />
+            </div>
+          ) : null}
           {/* Top bar */}
           <div className="mb-8 flex items-center justify-between gap-4">
-            <div></div>
+            <div className="text-sm font-medium text-slate-200/80">
+              {isNavigating ? "Loading page..." : ""}
+            </div>
             <div className="flex items-center gap-4">
               <Link
                 href="/dashboard/notifications"

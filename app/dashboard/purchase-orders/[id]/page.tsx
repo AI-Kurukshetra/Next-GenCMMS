@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { addPurchaseOrderItemAction, updatePurchaseOrderAction } from "@/app/dashboard/purchase-orders/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatCurrency } from "@/lib/utils";
@@ -125,7 +127,11 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         </div>
 
         <div className="space-y-6">
-          <form action={updatePurchaseOrderAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+          <ServerActionForm
+            action={updatePurchaseOrderAction}
+            successMessage="Purchase order updated successfully."
+            className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+          >
             <h3 className="text-base font-bold text-slate-900">Edit Purchase Order</h3>
             <input type="hidden" name="id" value={po.id} />
             <select name="vendor_id" defaultValue={po.vendor_id ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -146,12 +152,21 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
               <option value="cancelled">cancelled</option>
             </select>
             <textarea name="notes" defaultValue={po.notes ?? ""} rows={2} placeholder="Notes" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Saving..."
+              className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+            >
               Save Changes
-            </button>
-          </form>
+            </FormSubmitButton>
+          </ServerActionForm>
 
-          <form action={addPurchaseOrderItemAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+          <ServerActionForm
+            action={addPurchaseOrderItemAction}
+            resetOnSuccess
+            successMessage="Line item added successfully."
+            className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+          >
             <h3 className="text-base font-bold text-slate-900">Add Line Item</h3>
             <input type="hidden" name="purchase_order_id" value={po.id} />
             <select name="inventory_part_id" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -164,10 +179,14 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
             </select>
             <input name="quantity_ordered" type="number" step="0.01" min="0.01" required placeholder="Quantity *" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             <input name="unit_cost" type="number" step="0.01" min="0" placeholder="Unit cost" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Adding..."
+              className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+            >
               Add Item
-            </button>
-          </form>
+            </FormSubmitButton>
+          </ServerActionForm>
         </div>
       </div>
     </section>

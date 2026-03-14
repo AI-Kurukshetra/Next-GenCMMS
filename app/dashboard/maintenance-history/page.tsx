@@ -1,3 +1,4 @@
+import { FilterForm } from "@/components/filter-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
@@ -57,29 +58,22 @@ export default async function MaintenanceHistoryPage({
         <p className="mt-2 text-slate-600">Complete audit trail of all maintenance activities</p>
       </div>
 
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <select name="asset_id" defaultValue={assetId} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All assets</option>
-          {assets?.map((asset) => (
-            <option key={asset.id} value={asset.id}>
-              {asset.name}
-            </option>
-          ))}
-        </select>
-        <select name="event_type" defaultValue={eventType} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All event types</option>
-          {eventTypes.map((type) => (
-            <option key={type} value={type}>
-              {type.replace("_", " ")}
-            </option>
-          ))}
-        </select>
-        <div className="col-span-2">
-          <button type="submit" className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-            Filter
-          </button>
-        </div>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'asset_id',
+            label: 'All assets',
+            type: 'select',
+            options: assets?.map((a) => ({ value: a.id, label: a.name })) || [],
+          },
+          {
+            name: 'event_type',
+            label: 'All event types',
+            type: 'select',
+            options: eventTypes.map((type) => ({ value: type, label: type.replace("_", " ") })),
+          },
+        ]}
+      />
 
       <div className="rounded-xl border border-slate-200 overflow-hidden">
         <table className="min-w-full text-sm">

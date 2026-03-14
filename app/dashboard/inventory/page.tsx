@@ -3,6 +3,8 @@ import {
   deleteInventoryPartAction,
   updateInventoryPartAction,
 } from "@/app/dashboard/inventory/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +36,12 @@ export default async function InventoryPage({
     <section>
       <h2 className="text-2xl font-bold text-slate-900">Inventory</h2>
       <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingPart ? updateInventoryPartAction : createInventoryPartAction} className="rounded-xl border border-slate-200 p-4">
+        <ServerActionForm
+          action={editingPart ? updateInventoryPartAction : createInventoryPartAction}
+          resetOnSuccess={!editingPart}
+          successMessage={editingPart ? "Part updated successfully." : "Part saved successfully."}
+          className="rounded-xl border border-slate-200 p-4"
+        >
           <h3 className="text-base font-semibold text-slate-900">{editingPart ? "Edit Part" : "Add Part"}</h3>
           <div className="mt-4 space-y-3">
             {editingPart && <input type="hidden" name="id" value={editingPart.id} />}
@@ -86,16 +93,20 @@ export default async function InventoryPage({
               placeholder="Unit cost"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
-            <button type="submit" className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText={editingPart ? "Updating..." : "Saving..."}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
               {editingPart ? "Update Part" : "Save Part"}
-            </button>
+            </FormSubmitButton>
             {editingPart && (
               <a href="/dashboard/inventory" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
                 Cancel Edit
               </a>
             )}
           </div>
-        </form>
+        </ServerActionForm>
 
         <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="min-w-full text-sm">
@@ -122,9 +133,13 @@ export default async function InventoryPage({
                       <div className="flex gap-2">
                         <form action={deleteInventoryPartAction}>
                           <input type="hidden" name="id" value={part.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

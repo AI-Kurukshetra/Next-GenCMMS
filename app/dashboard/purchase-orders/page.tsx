@@ -4,6 +4,9 @@ import {
   deletePurchaseOrderAction,
   updatePurchaseOrderStatusAction,
 } from "@/app/dashboard/purchase-orders/actions";
+import { FilterForm } from "@/components/filter-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
@@ -51,31 +54,36 @@ export default async function PurchaseOrdersPage({
         <p className="mt-2 text-slate-600">Create and track purchase orders for parts and services</p>
       </div>
 
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <input name="q" defaultValue={q} placeholder="Search PO number" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        <select name="status" defaultValue={status} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          {statusOptions.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select name="vendor_id" defaultValue={vendor_id} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All vendors</option>
-          {vendors?.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Filter
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'q',
+            label: 'Search',
+            type: 'text',
+            placeholder: 'Search PO number',
+          },
+          {
+            name: 'status',
+            label: 'All statuses',
+            type: 'select',
+            options: statusOptions.map((s) => ({ value: s, label: s })),
+          },
+          {
+            name: 'vendor_id',
+            label: 'All vendors',
+            type: 'select',
+            options: vendors?.map((v) => ({ value: v.id, label: v.name })) || [],
+          },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={createPurchaseOrderAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+        <ServerActionForm
+          action={createPurchaseOrderAction}
+          resetOnSuccess
+          successMessage="Purchase order created successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
           <h3 className="text-base font-bold text-slate-900">Create PO</h3>
           <select name="vendor_id" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             <option value="">Select vendor *</option>
@@ -89,10 +97,14 @@ export default async function PurchaseOrdersPage({
           <input name="order_date" type="date" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <input name="expected_date" type="date" placeholder="Expected delivery" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea name="notes" placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText="Creating..."
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
             Create
-          </button>
-        </form>
+          </FormSubmitButton>
+        </ServerActionForm>
 
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -125,9 +137,13 @@ export default async function PurchaseOrdersPage({
                             </option>
                           ))}
                         </select>
-                        <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">
+                        <FormSubmitButton
+                          type="submit"
+                          pendingText="Updating..."
+                          className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
+                        >
                           Update
-                        </button>
+                        </FormSubmitButton>
                       </form>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(po.order_date)}</td>
@@ -138,9 +154,13 @@ export default async function PurchaseOrdersPage({
                         </Link>
                         <form action={deletePurchaseOrderAction}>
                           <input type="hidden" name="id" value={po.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

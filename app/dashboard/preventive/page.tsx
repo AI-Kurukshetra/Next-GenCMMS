@@ -5,6 +5,8 @@ import {
   updateScheduleAction,
 } from "@/app/dashboard/preventive/actions";
 import Link from "next/link";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,14 +44,22 @@ export default async function PreventivePage({
           </p>
         </div>
         <form action={runPmGenerationAction}>
-          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          <FormSubmitButton
+            pendingText="Running..."
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+          >
             Run PM Generation
-          </button>
+          </FormSubmitButton>
         </form>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingSchedule ? updateScheduleAction : createScheduleAction} className="rounded-xl border border-slate-200 p-4">
+        <ServerActionForm
+          action={editingSchedule ? updateScheduleAction : createScheduleAction}
+          resetOnSuccess={!editingSchedule}
+          successMessage={editingSchedule ? "Schedule updated successfully." : "Schedule saved successfully."}
+          className="rounded-xl border border-slate-200 p-4"
+        >
           <h3 className="text-base font-semibold text-slate-900">{editingSchedule ? "Edit PM Schedule" : "Create PM Schedule"}</h3>
           <div className="mt-4 space-y-3">
             {editingSchedule && <input type="hidden" name="id" value={editingSchedule.id} />}
@@ -86,16 +96,20 @@ export default async function PreventivePage({
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
-            <button type="submit" className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            <FormSubmitButton
+              type="submit"
+              pendingText={editingSchedule ? "Updating..." : "Saving..."}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
               {editingSchedule ? "Update Schedule" : "Save Schedule"}
-            </button>
+            </FormSubmitButton>
             {editingSchedule && (
               <Link href="/dashboard/preventive" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
                 Cancel Edit
               </Link>
             )}
           </div>
-        </form>
+        </ServerActionForm>
 
         <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="min-w-full text-sm">
@@ -118,9 +132,13 @@ export default async function PreventivePage({
                       <div className="flex gap-2">
                         <form action={deleteScheduleAction}>
                           <input type="hidden" name="id" value={schedule.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

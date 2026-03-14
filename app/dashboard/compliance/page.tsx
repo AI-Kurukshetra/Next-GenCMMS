@@ -4,6 +4,9 @@ import {
   updateComplianceRecordAction,
   updateComplianceStatusAction,
 } from "@/app/dashboard/compliance/actions";
+import { FilterForm } from "@/components/filter-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
@@ -88,21 +91,29 @@ export default async function CompliancePage({
       </div>
 
       {/* Filter */}
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <select name="status" defaultValue={statusFilter} className="rounded-lg border border-slate-300 px-3 py-2 text-sm col-span-3">
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="overdue">Overdue</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Filter
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'status',
+            label: 'All statuses',
+            type: 'select',
+            options: [
+              { value: 'pending', label: 'Pending' },
+              { value: 'passed', label: 'Passed' },
+              { value: 'failed', label: 'Failed' },
+              { value: 'overdue', label: 'Overdue' },
+            ],
+          },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingRecord ? updateComplianceRecordAction : createComplianceRecordAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+        <ServerActionForm
+          action={editingRecord ? updateComplianceRecordAction : createComplianceRecordAction}
+          resetOnSuccess={!editingRecord}
+          successMessage={editingRecord ? "Compliance record updated successfully." : "Compliance record created successfully."}
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
           <h3 className="text-base font-bold text-slate-900">{editingRecord ? "Edit Record" : "Create Record"}</h3>
           {editingRecord && <input type="hidden" name="id" value={editingRecord.id} />}
           <select
@@ -127,15 +138,19 @@ export default async function CompliancePage({
           />
           <input name="due_date" type="date" defaultValue={editingRecord?.due_date ?? ""} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea name="notes" defaultValue={editingRecord?.notes ?? ""} placeholder="Notes" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText={editingRecord ? "Updating..." : "Saving..."}
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
             {editingRecord ? "Update" : "Create"}
-          </button>
+          </FormSubmitButton>
           {editingRecord && (
             <a href="/dashboard/compliance" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
               Cancel Edit
             </a>
           )}
-        </form>
+        </ServerActionForm>
 
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -164,18 +179,26 @@ export default async function CompliancePage({
                           <option value="failed">Failed</option>
                           <option value="overdue">Overdue</option>
                         </select>
-                        <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">
+                        <FormSubmitButton
+                          type="submit"
+                          pendingText="Updating..."
+                          className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
+                        >
                           Status
-                        </button>
+                        </FormSubmitButton>
                       </form>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <form action={deleteComplianceRecordAction}>
                           <input type="hidden" name="id" value={record.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

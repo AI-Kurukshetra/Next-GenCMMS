@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createMeterAction, deleteMeterAction, updateMeterAction } from "@/app/dashboard/meters/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
@@ -36,7 +38,12 @@ export default async function MetersPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={editingMeter ? updateMeterAction : createMeterAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+        <ServerActionForm
+          action={editingMeter ? updateMeterAction : createMeterAction}
+          resetOnSuccess={!editingMeter}
+          successMessage={editingMeter ? "Meter updated successfully." : "Meter created successfully."}
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
           <h3 className="text-base font-bold text-slate-900">{editingMeter ? "Edit Meter" : "Create Meter"}</h3>
           {editingMeter && <input type="hidden" name="id" value={editingMeter.id} />}
           <select
@@ -75,15 +82,19 @@ export default async function MetersPage({
             placeholder="Initial reading"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">
+          <FormSubmitButton
+            type="submit"
+            pendingText={editingMeter ? "Updating..." : "Saving..."}
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
             {editingMeter ? "Update Meter" : "Create Meter"}
-          </button>
+          </FormSubmitButton>
           {editingMeter && (
             <Link href="/dashboard/meters" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
               Cancel Edit
             </Link>
           )}
-        </form>
+        </ServerActionForm>
 
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -112,9 +123,13 @@ export default async function MetersPage({
                       <div className="flex gap-2">
                         <form action={deleteMeterAction}>
                           <input type="hidden" name="id" value={meter.id} />
-                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          <FormSubmitButton
+                            type="submit"
+                            pendingText="Deleting..."
+                            className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                          >
                             Delete
-                          </button>
+                          </FormSubmitButton>
                         </form>
                       </div>
                     </td>

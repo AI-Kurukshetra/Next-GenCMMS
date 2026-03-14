@@ -1,3 +1,4 @@
+import { FilterForm } from "@/components/filter-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
@@ -65,16 +66,19 @@ export default async function DocumentsPage({
         <p className="mt-2 text-slate-600">Manage manuals, photos, and documentation</p>
       </div>
 
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <select name="entity_type" defaultValue={entityTypeFilter} className="rounded-lg border border-slate-300 px-3 py-2 text-sm col-span-3">
-          <option value="">All documents</option>
-          <option value="asset">Asset Documents</option>
-          <option value="work_order">Work Order Documents</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Filter
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'entity_type',
+            label: 'All documents',
+            type: 'select',
+            options: [
+              { value: 'asset', label: 'Asset Documents' },
+              { value: 'work_order', label: 'Work Order Documents' },
+            ],
+          },
+        ]}
+      />
 
       <div className="rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">

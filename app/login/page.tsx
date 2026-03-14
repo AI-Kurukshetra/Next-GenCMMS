@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInAction } from "@/app/login/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function LoginPage({
@@ -111,13 +112,14 @@ export default async function LoginPage({
             </div>
 
             {/* Submit Button */}
-            <button
+            <FormSubmitButton
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              pendingText="Signing In..."
+              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 font-semibold text-white shadow-lg transition hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Sign in to your account"
             >
               Sign In
-            </button>
+            </FormSubmitButton>
           </form>
 
           {/* Divider */}

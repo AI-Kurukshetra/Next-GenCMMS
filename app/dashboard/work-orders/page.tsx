@@ -4,6 +4,9 @@ import {
   deleteWorkOrderAction,
   updateWorkOrderStatusAction,
 } from "@/app/dashboard/work-orders/actions";
+import { FilterForm } from "@/components/filter-form";
+import { FormSubmitButton } from "@/components/form-submit-button";
+import { ServerActionForm } from "@/components/server-action-form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
@@ -51,35 +54,47 @@ export default async function WorkOrdersPage({
         <h2 className="text-3xl font-black text-slate-900">Work Orders</h2>
         <p className="mt-2 text-slate-600">Create, assign, and track maintenance tasks</p>
       </div>
-      <form method="get" className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search by title"
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        />
-        <select name="status" defaultValue={status} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          <option value="open">Open</option>
-          <option value="assigned">Assigned</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-        <select name="priority" defaultValue={priority} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="">All priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-          Apply Filters
-        </button>
-      </form>
+      <FilterForm
+        fields={[
+          {
+            name: 'q',
+            label: 'Search',
+            type: 'text',
+            placeholder: 'Search by title',
+          },
+          {
+            name: 'status',
+            label: 'All statuses',
+            type: 'select',
+            options: [
+              { value: 'open', label: 'Open' },
+              { value: 'assigned', label: 'Assigned' },
+              { value: 'in_progress', label: 'In Progress' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'cancelled', label: 'Cancelled' },
+            ],
+          },
+          {
+            name: 'priority',
+            label: 'All priorities',
+            type: 'select',
+            options: [
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ],
+          },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={createWorkOrderAction} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit">
+        <ServerActionForm
+          action={createWorkOrderAction}
+          resetOnSuccess
+          successMessage="Work order created successfully."
+          className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3 h-fit"
+        >
           <h3 className="text-base font-bold text-slate-900">Create Work Order</h3>
           <input name="title" required placeholder="Title *" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea name="description" placeholder="Description" rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
@@ -109,8 +124,14 @@ export default async function WorkOrdersPage({
             {technicians?.map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
           </select>
           <input type="date" name="due_date" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <button type="submit" className="w-full rounded-lg bg-indigo-600 text-white font-semibold py-2 hover:bg-indigo-700">Create</button>
-        </form>
+          <FormSubmitButton
+            type="submit"
+            pendingText="Creating..."
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-700"
+          >
+            Create
+          </FormSubmitButton>
+        </ServerActionForm>
 
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -136,7 +157,13 @@ export default async function WorkOrdersPage({
                       <select name="status" defaultValue={wo.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
                         {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">Update</button>
+                      <FormSubmitButton
+                        type="submit"
+                        pendingText="Updating..."
+                        className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-300"
+                      >
+                        Update
+                      </FormSubmitButton>
                     </form>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(wo.due_date || "", "MMM d")}</td>
@@ -145,9 +172,13 @@ export default async function WorkOrdersPage({
                       <Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">View</Link>
                       <form action={deleteWorkOrderAction}>
                         <input type="hidden" name="id" value={wo.id} />
-                        <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                        <FormSubmitButton
+                          type="submit"
+                          pendingText="Deleting..."
+                          className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200"
+                        >
                           Delete
-                        </button>
+                        </FormSubmitButton>
                       </form>
                     </div>
                   </td>

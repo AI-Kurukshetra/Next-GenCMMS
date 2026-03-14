@@ -1,4 +1,5 @@
 import { markNotificationReadAction, markAllNotificationsReadAction } from "@/app/dashboard/notifications/actions";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
@@ -24,9 +25,13 @@ export default async function NotificationsPage() {
         </div>
         {unreadCount > 0 && (
           <form action={markAllNotificationsReadAction}>
-            <button type="submit" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <FormSubmitButton
+              type="submit"
+              pendingText="Updating..."
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
               Mark All as Read
-            </button>
+            </FormSubmitButton>
           </form>
         )}
       </div>
@@ -45,12 +50,13 @@ export default async function NotificationsPage() {
                   {!n.is_read && (
                     <form action={markNotificationReadAction}>
                       <input type="hidden" name="id" value={n.id} />
-                      <button
+                      <FormSubmitButton
                         type="submit"
-                        className="rounded text-xs px-2 py-1 bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                        pendingText="Updating..."
+                        className="rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700"
                       >
                         Mark Read
-                      </button>
+                      </FormSubmitButton>
                     </form>
                   )}
                 </div>
