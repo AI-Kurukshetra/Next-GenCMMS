@@ -6,6 +6,23 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateRelative } from "@/lib/utils";
 
+type MeterRecord = {
+  id: string;
+  asset_id: string;
+  meter_type: string;
+  unit: string;
+  current_reading: number | string | null;
+  last_recorded_at: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
+
 export default async function MetersPage({
   searchParams,
 }: {
@@ -28,7 +45,16 @@ export default async function MetersPage({
       .order("name"),
   ]);
   const editId = (searchParams?.edit_id ?? "").trim();
-  const editingMeter = meters?.find((meter) => meter.id === editId);
+  const meterRows = (meters ?? []) as MeterRecord[];
+  const editingMeter = meterRows.find((meter) => meter.id === editId);
+
+  function getAssetName(meter: MeterRecord) {
+    if (Array.isArray(meter.assets)) {
+      return meter.assets[0]?.name ?? null;
+    }
+
+    return meter.assets?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -108,10 +134,10 @@ export default async function MetersPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {meters?.length ? (
-                meters.map((meter: any) => (
+              {meterRows.length ? (
+                meterRows.map((meter) => (
                   <tr key={meter.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{meter.assets?.name}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{getAssetName(meter) || "-"}</td>
                     <td className="px-4 py-3 capitalize text-slate-600">{meter.meter_type}</td>
                     <td className="px-4 py-3 font-semibold text-slate-900">
                       {meter.current_reading ?? "-"} {meter.unit}

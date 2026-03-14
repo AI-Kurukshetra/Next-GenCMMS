@@ -11,6 +11,25 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 
+type PurchaseOrderRecord = {
+  id: string;
+  po_number: string;
+  status: string;
+  order_date: string;
+  expected_date: string | null;
+  total_amount: number | string | null;
+  notes: string | null;
+  vendor_id: string | null;
+  vendors:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
+
 export default async function PurchaseOrdersPage({
   searchParams,
 }: {
@@ -44,8 +63,17 @@ export default async function PurchaseOrdersPage({
     query,
     supabase.from("vendors").select("id,name").eq("organization_id", profile.organization_id).order("name"),
   ]);
+  const purchaseOrders = (pos ?? []) as PurchaseOrderRecord[];
 
   const statusOptions = ["draft", "sent", "received", "cancelled"];
+
+  function getVendorName(po: PurchaseOrderRecord) {
+    if (Array.isArray(po.vendors)) {
+      return po.vendors[0]?.name ?? null;
+    }
+
+    return po.vendors?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -118,15 +146,15 @@ export default async function PurchaseOrdersPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {pos?.length ? (
-                pos.map((po: any) => (
+              {purchaseOrders.length ? (
+                purchaseOrders.map((po) => (
                   <tr key={po.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium">
                       <Link href={`/dashboard/purchase-orders/${po.id}`} className="text-indigo-600 hover:underline">
                         {po.po_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{po.vendors?.name || "-"}</td>
+                    <td className="px-4 py-3 text-slate-600">{getVendorName(po) || "-"}</td>
                     <td className="px-4 py-3">
                       <form action={updatePurchaseOrderStatusAction} className="flex gap-1">
                         <input type="hidden" name="id" value={po.id} />

@@ -6,6 +6,22 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
+type PurchaseOrderItemRecord = {
+  id: string;
+  quantity_ordered: number | string;
+  unit_cost: number | string | null;
+  inventory_parts:
+    | {
+        name: string | null;
+        sku: string | null;
+      }
+    | {
+        name: string | null;
+        sku: string | null;
+      }[]
+    | null;
+};
+
 export default async function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
   const profile = await requireProfile();
   const supabase = await createClient();
@@ -38,7 +54,19 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
     return <div className="text-center py-12 text-slate-500">Purchase order not found</div>;
   }
 
-  const totalItems = items?.reduce((sum, item) => sum + (parseFloat(item.quantity_ordered) * (parseFloat(item.unit_cost) || 0)), 0) || 0;
+  const purchaseOrderItems = (items ?? []) as PurchaseOrderItemRecord[];
+  const totalItems = purchaseOrderItems.reduce(
+    (sum, item) => sum + parseFloat(String(item.quantity_ordered)) * (parseFloat(String(item.unit_cost ?? 0)) || 0),
+    0
+  );
+
+  function getItemPart(item: PurchaseOrderItemRecord) {
+    if (Array.isArray(item.inventory_parts)) {
+      return item.inventory_parts[0] ?? null;
+    }
+
+    return item.inventory_parts ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -101,18 +129,23 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
                   </tr>
                 </thead>
                 <tbody>
-                  {items?.length ? (
-                    items.map((item: any) => (
+                  {purchaseOrderItems.length ? (
+                    purchaseOrderItems.map((item) => {
+                      const part = getItemPart(item);
+                      return (
                       <tr key={item.id} className="border-t border-slate-100">
-                        <td className="px-4 py-3 font-medium text-slate-900">{item.inventory_parts?.name}</td>
-                        <td className="px-4 py-3 text-slate-600">{item.inventory_parts?.sku || "-"}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{part?.name || "-"}</td>
+                        <td className="px-4 py-3 text-slate-600">{part?.sku || "-"}</td>
                         <td className="px-4 py-3 text-slate-600">{item.quantity_ordered}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatCurrency(parseFloat(item.unit_cost) || 0)}</td>
+                        <td className="px-4 py-3 text-slate-600">{formatCurrency(parseFloat(String(item.unit_cost ?? 0)) || 0)}</td>
                         <td className="px-4 py-3 font-semibold text-slate-900">
-                          {formatCurrency(parseFloat(item.quantity_ordered) * (parseFloat(item.unit_cost) || 0))}
+                          {formatCurrency(
+                            parseFloat(String(item.quantity_ordered)) * (parseFloat(String(item.unit_cost ?? 0)) || 0)
+                          )}
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={5} className="px-4 py-6 text-center text-slate-500">

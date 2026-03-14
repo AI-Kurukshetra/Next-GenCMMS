@@ -11,6 +11,24 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 
+type ComplianceRecord = {
+  id: string;
+  asset_id: string;
+  inspection_type: string;
+  status: string;
+  due_date: string;
+  completed_date: string | null;
+  notes: string | null;
+  assets:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
+};
+
 export default async function CompliancePage({
   searchParams,
 }: {
@@ -50,14 +68,23 @@ export default async function CompliancePage({
       .eq("organization_id", profile.organization_id)
       .order("name"),
   ]);
+  const complianceRecords = (records ?? []) as ComplianceRecord[];
 
   // Calculate stats
-  const total = records?.length || 0;
-  const pending = records?.filter((r: any) => r.status === "pending").length || 0;
-  const passed = records?.filter((r: any) => r.status === "passed").length || 0;
-  const failed = records?.filter((r: any) => r.status === "failed").length || 0;
-  const overdue = records?.filter((r: any) => r.status === "overdue").length || 0;
-  const editingRecord = records?.find((record: any) => record.id === editId);
+  const total = complianceRecords.length;
+  const pending = complianceRecords.filter((r) => r.status === "pending").length;
+  const passed = complianceRecords.filter((r) => r.status === "passed").length;
+  const failed = complianceRecords.filter((r) => r.status === "failed").length;
+  const overdue = complianceRecords.filter((r) => r.status === "overdue").length;
+  const editingRecord = complianceRecords.find((record) => record.id === editId);
+
+  function getAssetName(record: ComplianceRecord) {
+    if (Array.isArray(record.assets)) {
+      return record.assets[0]?.name ?? null;
+    }
+
+    return record.assets?.name ?? null;
+  }
 
   return (
     <section className="space-y-6">
@@ -164,10 +191,10 @@ export default async function CompliancePage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {records?.length ? (
-                records.map((record: any) => (
+              {complianceRecords.length ? (
+                complianceRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{record.assets?.name}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{getAssetName(record) || "-"}</td>
                     <td className="px-4 py-3 text-slate-600">{record.inspection_type}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(record.due_date)}</td>
                     <td className="px-4 py-3">
