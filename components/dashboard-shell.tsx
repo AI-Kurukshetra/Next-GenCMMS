@@ -83,9 +83,9 @@ export function DashboardShell({
             <Image
               src="/logo.png"
               alt="Asset Ops Logo"
-              width={140}
-              height={140}
-              className="h-32 w-32"
+              width={180}
+              height={180}
+              className="h-40 w-40"
               priority
             />
           </div>
