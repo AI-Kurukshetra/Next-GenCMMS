@@ -1,12 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signUpAction } from "@/app/signup/actions";
+import { createClient } from "@/lib/supabase/server";
 
-export default function SignupPage({
+export default async function SignupPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center p-4">
       {/* Background elements */}
@@ -33,16 +43,31 @@ export default function SignupPage({
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
           <form action={signUpAction} className="space-y-4">
+            {/* Error Alert */}
+            {searchParams.error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex gap-3">
+                  <span className="text-lg">⚠️</span>
+                  <p className="text-sm text-red-700 font-medium">{searchParams.error}</p>
+                </div>
+              </div>
+            )}
+
             {/* Company Name Field */}
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label htmlFor="company_name" className="block text-sm font-semibold text-slate-900 mb-2">
                 Company Name
               </label>
               <input
+                id="company_name"
                 name="company_name"
                 type="text"
                 placeholder="Your Company Inc."
                 required
+                minLength={2}
+                autoComplete="organization"
+                aria-label="Company name"
+                aria-required="true"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
               <p className="text-xs text-slate-500 mt-1">We will use this to set up your workspace</p>
@@ -50,59 +75,85 @@ export default function SignupPage({
 
             {/* Full Name Field */}
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label htmlFor="full_name" className="block text-sm font-semibold text-slate-900 mb-2">
                 Full Name
               </label>
               <input
+                id="full_name"
                 name="full_name"
                 type="text"
                 placeholder="John Doe"
                 required
+                minLength={2}
+                autoComplete="name"
+                aria-label="Full name"
+                aria-required="true"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
             </div>
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
                 Email Address
               </label>
               <input
+                id="email"
                 name="email"
                 type="email"
                 placeholder="you@company.com"
                 required
+                autoComplete="email"
+                aria-label="Email address"
+                aria-required="true"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-900 mb-2">
                 Password
               </label>
               <input
+                id="password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
-                minLength={6}
+                minLength={8}
                 required
+                autoComplete="new-password"
+                aria-label="Password"
+                aria-required="true"
+                aria-describedby="password-hint"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
-              <p className="text-xs text-slate-500 mt-1">At least 6 characters</p>
+              <p id="password-hint" className="text-xs text-slate-500 mt-1">At least 8 characters</p>
             </div>
 
-            {searchParams.error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                <p className="text-sm text-red-700 font-medium">
-                  ❌ {searchParams.error}
-                </p>
-              </div>
-            )}
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="password_confirm" className="block text-sm font-semibold text-slate-900 mb-2">
+                Confirm Password
+              </label>
+              <input
+                id="password_confirm"
+                name="password_confirm"
+                type="password"
+                placeholder="••••••••"
+                minLength={8}
+                required
+                autoComplete="new-password"
+                aria-label="Confirm password"
+                aria-required="true"
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
+              />
+            </div>
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95"
+              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Create account"
             >
               Create Account
             </button>

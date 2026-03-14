@@ -23,10 +23,13 @@ export async function createScheduleAction(formData: FormData) {
   };
 
   if (!payload.asset_id || !payload.title || !payload.next_due_date || intervalDays < 1) {
-    return;
+    throw new Error("Title, asset, interval, and next due date are required.");
   }
 
-  await supabase.from("preventive_schedules").insert(payload);
+  const { error } = await supabase.from("preventive_schedules").insert(payload);
+  if (error) {
+    throw new Error(`Failed to create preventive schedule: ${error.message}`);
+  }
   revalidatePath("/dashboard/preventive");
 }
 
@@ -83,4 +86,59 @@ export async function runPmGenerationAction() {
 
   revalidatePath("/dashboard/preventive");
   revalidatePath("/dashboard/work-orders");
+}
+
+export async function updateScheduleAction(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "").trim();
+  const asset_id = String(formData.get("asset_id") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const next_due_date = String(formData.get("next_due_date") ?? "").trim();
+  const interval_days = Number(formData.get("interval_days") ?? 0);
+
+  if (!id || !asset_id || !title || !next_due_date || Number.isNaN(interval_days) || interval_days < 1) {
+    throw new Error("Schedule ID, asset, title, interval, and next due date are required.");
+  }
+
+  const { error } = await supabase
+    .from("preventive_schedules")
+    .update({
+      asset_id,
+      title,
+      interval_days,
+      next_due_date,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("organization_id", profile.organization_id);
+
+  if (error) {
+    throw new Error(`Failed to update schedule: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard/preventive");
+}
+
+export async function deleteScheduleAction(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "").trim();
+
+  if (!id) {
+    throw new Error("Schedule ID is required.");
+  }
+
+  const { error } = await supabase
+    .from("preventive_schedules")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", profile.organization_id);
+
+  if (error) {
+    throw new Error(`Failed to delete schedule: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard/preventive");
 }

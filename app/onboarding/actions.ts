@@ -9,8 +9,8 @@ export async function completeOnboardingAction(formData: FormData) {
   const locationName = String(formData.get("location_name") ?? "").trim();
   const fullName = String(formData.get("full_name") ?? "").trim();
 
-  if (!organizationName || !locationName) {
-    return;
+  if (!organizationName || !locationName || !fullName) {
+    redirect("/onboarding?error=All fields are required");
   }
 
   const supabase = await createClient();

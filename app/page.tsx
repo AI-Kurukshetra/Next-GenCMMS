@@ -77,12 +77,6 @@ export default function HomePage() {
               >
                 Start Free Trial →
               </Link>
-              <Link
-                href="/dashboard"
-                className="px-8 py-4 rounded-lg border-2 border-indigo-500/50 text-white font-bold text-lg hover:bg-indigo-500/10 transition"
-              >
-                View Demo
-              </Link>
             </div>
 
             <p className="text-sm text-slate-400">

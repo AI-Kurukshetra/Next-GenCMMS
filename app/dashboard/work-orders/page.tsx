@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { createWorkOrderAction, updateWorkOrderStatusAction } from "@/app/dashboard/work-orders/actions";
+import {
+  createWorkOrderAction,
+  deleteWorkOrderAction,
+  updateWorkOrderStatusAction,
+} from "@/app/dashboard/work-orders/actions";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
@@ -129,14 +133,24 @@ export default async function WorkOrdersPage({
                   <td className="px-4 py-3">
                     <form action={updateWorkOrderStatusAction} className="flex gap-1">
                       <input type="hidden" name="id" value={wo.id} />
-                      <select name="status" defaultValue={wo.status} className="rounded text-xs px-2 py-1 border border-slate-300">
+                      <select name="status" defaultValue={wo.status} required className="rounded text-xs px-2 py-1 border border-slate-300">
                         {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                       <button type="submit" className="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-200 rounded hover:bg-slate-300">Update</button>
                     </form>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(wo.due_date || "", "MMM d")}</td>
-                  <td className="px-4 py-3"><Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">View</Link></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 text-xs font-semibold hover:underline">View</Link>
+                      <form action={deleteWorkOrderAction}>
+                        <input type="hidden" name="id" value={wo.id} />
+                        <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               )) : <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">No work orders yet</td></tr>}
             </tbody>
