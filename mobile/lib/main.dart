@@ -37,6 +37,22 @@ class AssetOpsMobileApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF0B1220),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F172A),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF0F172A),
+          indicatorColor: const Color(0xFF4F46E5),
+          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(color: Colors.white, fontWeight: FontWeight.w700);
+            }
+            return const TextStyle(color: Colors.white70);
+          }),
+        ),
       ),
       home: const AuthGate(),
     );
@@ -199,8 +215,8 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(6),
               child: Image.asset(
                 'assets/app_icon.png',
-                width: 34,
-                height: 34,
+                width: 42,
+                height: 42,
                 fit: BoxFit.cover,
               ),
             ),
@@ -222,21 +238,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: pages[_tabIndex],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0B1220), Color(0xFF111827), Color(0xFF312E81)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: pages[_tabIndex],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
         onDestinationSelected: (idx) => setState(() => _tabIndex = idx),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
+            icon: const Icon(Icons.assignment_outlined, color: Colors.white70),
+            selectedIcon: const Icon(Icons.assignment, color: Colors.white),
             label: 'Work',
           ),
           NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner),
+            icon: const Icon(Icons.qr_code_scanner, color: Colors.white70),
+            selectedIcon: const Icon(Icons.qr_code_scanner, color: Colors.white),
             label: 'Scan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.cloud_off_outlined),
+            icon: const Icon(Icons.cloud_off_outlined, color: Colors.white70),
+            selectedIcon: const Icon(Icons.cloud_done, color: Colors.white),
             label: 'Offline',
           ),
         ],
