@@ -46,14 +46,15 @@ body {
   color: var(--text);
   min-height: 100vh;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  font-family: var(--font-sans), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: var(--font-sans), "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+  font-weight: 600;
 }
 
 @layer components {

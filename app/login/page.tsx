@@ -1,12 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signInAction } from "@/app/login/actions";
+import { createClient } from "@/lib/supabase/server";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: { error?: string; message?: string };
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center p-4">
       {/* Background elements */}
@@ -33,59 +43,78 @@ export default function LoginPage({
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
           <form action={signInAction} className="space-y-4">
+            {/* Error Alert */}
+            {searchParams.error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex gap-3">
+                  <span className="text-lg">⚠️</span>
+                  <p className="text-sm text-red-700 font-medium">{searchParams.error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {searchParams.message && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex gap-3">
+                  <span className="text-lg">✓</span>
+                  <p className="text-sm text-green-700 font-medium">{searchParams.message}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Email Input */}
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
                 Email Address
               </label>
               <input
+                id="email"
                 name="email"
                 type="email"
                 placeholder="you@company.com"
                 required
+                autoComplete="email"
+                aria-label="Email address"
+                aria-required="true"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
             </div>
 
+            {/* Password Input */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-slate-900">
+                <label htmlFor="password" className="block text-sm font-semibold text-slate-900">
                   Password
                 </label>
                 <Link
-                  href="#"
-                  className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold"
+                  href="/forgot-password"
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition"
+                  aria-label="Forgot your password?"
                 >
                   Forgot?
                 </Link>
               </div>
               <input
+                id="password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
                 required
+                autoComplete="current-password"
+                aria-label="Password"
+                aria-required="true"
+                minLength={6}
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition"
               />
+              <p className="text-xs text-slate-500 mt-2">Minimum 6 characters</p>
             </div>
 
-            {searchParams.error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                <p className="text-sm text-red-700 font-medium">
-                  ❌ {searchParams.error}
-                </p>
-              </div>
-            )}
-
-            {searchParams.message && (
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-                <p className="text-sm text-green-700 font-medium">
-                  ✓ {searchParams.message}
-                </p>
-              </div>
-            )}
-
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95"
+              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Sign in to your account"
             >
               Sign In
             </button>

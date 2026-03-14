@@ -1,18 +1,25 @@
 import {
   createScheduleAction,
+  deleteScheduleAction,
   runPmGenerationAction,
+  updateScheduleAction,
 } from "@/app/dashboard/preventive/actions";
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function PreventivePage() {
+export default async function PreventivePage({
+  searchParams,
+}: {
+  searchParams?: { edit_id?: string };
+}) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
   const [{ data: schedules }, { data: assets }] = await Promise.all([
     supabase
       .from("preventive_schedules")
-      .select("id,title,interval_days,next_due_date,is_active")
+      .select("id,asset_id,title,interval_days,next_due_date,is_active")
       .eq("organization_id", profile.organization_id)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -22,6 +29,8 @@ export default async function PreventivePage() {
       .eq("organization_id", profile.organization_id)
       .order("name", { ascending: true }),
   ]);
+  const editId = (searchParams?.edit_id ?? "").trim();
+  const editingSchedule = schedules?.find((schedule) => schedule.id === editId);
 
   return (
     <section>
@@ -40,21 +49,51 @@ export default async function PreventivePage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
-        <form action={createScheduleAction} className="rounded-xl border border-slate-200 p-4">
-          <h3 className="text-base font-semibold text-slate-900">Create PM Schedule</h3>
+        <form action={editingSchedule ? updateScheduleAction : createScheduleAction} className="rounded-xl border border-slate-200 p-4">
+          <h3 className="text-base font-semibold text-slate-900">{editingSchedule ? "Edit PM Schedule" : "Create PM Schedule"}</h3>
           <div className="mt-4 space-y-3">
-            <input name="title" required placeholder="Schedule title" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            <select name="asset_id" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            {editingSchedule && <input type="hidden" name="id" value={editingSchedule.id} />}
+            <input
+              name="title"
+              defaultValue={editingSchedule?.title ?? ""}
+              required
+              placeholder="Schedule title"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <select
+              name="asset_id"
+              defaultValue={editingSchedule?.asset_id ?? ""}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
               <option value="">Select asset</option>
               {assets?.map((asset) => (
                 <option key={asset.id} value={asset.id}>{asset.name}</option>
               ))}
             </select>
-            <input name="interval_days" type="number" min={1} defaultValue={30} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            <input name="next_due_date" type="date" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <input
+              name="interval_days"
+              type="number"
+              min={1}
+              required
+              defaultValue={editingSchedule?.interval_days ?? 30}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              name="next_due_date"
+              type="date"
+              defaultValue={editingSchedule?.next_due_date ?? ""}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
             <button type="submit" className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-              Save Schedule
+              {editingSchedule ? "Update Schedule" : "Save Schedule"}
             </button>
+            {editingSchedule && (
+              <Link href="/dashboard/preventive" className="block text-center text-xs font-semibold text-slate-600 hover:text-slate-900">
+                Cancel Edit
+              </Link>
+            )}
           </div>
         </form>
 
@@ -65,6 +104,7 @@ export default async function PreventivePage() {
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Interval</th>
                 <th className="px-3 py-2">Next Due</th>
+                <th className="px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -74,11 +114,21 @@ export default async function PreventivePage() {
                     <td className="px-3 py-2 font-medium text-slate-800">{schedule.title}</td>
                     <td className="px-3 py-2 text-slate-700">{schedule.interval_days} days</td>
                     <td className="px-3 py-2 text-slate-700">{schedule.next_due_date}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex gap-2">
+                        <form action={deleteScheduleAction}>
+                          <input type="hidden" name="id" value={schedule.id} />
+                          <button type="submit" className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+                            Delete
+                          </button>
+                        </form>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={3} className="px-3 py-6 text-center text-slate-500">No PM schedules yet.</td>
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-500">No PM schedules yet.</td>
                 </tr>
               )}
             </tbody>

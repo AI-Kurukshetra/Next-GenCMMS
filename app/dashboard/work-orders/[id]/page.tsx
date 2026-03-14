@@ -138,7 +138,7 @@ export default async function WorkOrderDetailPage({
             <h3 className="text-base font-bold text-slate-900">Status</h3>
             <div className="mt-3 flex gap-2">
               <input type="hidden" name="id" value={workOrder.id} />
-              <select name="status" defaultValue={workOrder.status} className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <select name="status" defaultValue={workOrder.status} required className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 <option value="open">Open</option>
                 <option value="assigned">Assigned</option>
                 <option value="in_progress">In Progress</option>
@@ -161,6 +161,7 @@ export default async function WorkOrderDetailPage({
               name="closure_notes"
               placeholder="Closure notes (required)"
               rows={3}
+              required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
             <button type="submit" className="w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700">

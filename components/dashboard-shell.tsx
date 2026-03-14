@@ -12,6 +12,12 @@ const navItems = [
   { href: "/dashboard/work-orders", label: "Work Orders", icon: "📋" },
   { href: "/dashboard/preventive", label: "Preventive", icon: "🔧" },
   { href: "/dashboard/inventory", label: "Inventory", icon: "📦" },
+  { href: "/dashboard/purchase-orders", label: "Purchase Orders", icon: "🛒" },
+  { href: "/dashboard/compliance", label: "Compliance", icon: "✅" },
+  { href: "/dashboard/meters", label: "Meters", icon: "📊" },
+  { href: "/dashboard/documents", label: "Documents", icon: "📄" },
+  { href: "/dashboard/maintenance-history", label: "History", icon: "📜" },
+  { href: "/dashboard/scan", label: "Scan QR", icon: "📱" },
   { href: "/dashboard/vendors", label: "Vendors", icon: "🤝" },
   { href: "/dashboard/reports", label: "Reports", icon: "📈" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
@@ -46,17 +52,17 @@ export function DashboardShell({
     .slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900">
       <div className="grid grid-cols-1 gap-0 md:grid-cols-[260px_1fr]">
         {/* Sidebar */}
-        <aside className="border-r border-slate-200 bg-slate-900 text-white md:min-h-screen">
-          <div className="p-5 flex items-center justify-center">
+        <aside className="border-r border-slate-700/60 bg-slate-900/95 text-white backdrop-blur md:min-h-screen">
+          <div className="p-6 flex items-center justify-center">
             <Image
               src="/logo.png"
               alt="Asset Ops Logo"
-              width={40}
-              height={40}
-              className="h-10 w-10"
+              width={140}
+              height={140}
+              className="h-32 w-32"
               priority
             />
           </div>
@@ -113,7 +119,7 @@ export function DashboardShell({
             <div className="flex items-center gap-4">
               <Link
                 href="/dashboard/notifications"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700/60 bg-slate-800/70 text-slate-200 hover:bg-slate-700/70 transition"
               >
                 <span className="text-lg">🔔</span>
                 {unreadNotifications && unreadNotifications > 0 && (
@@ -126,7 +132,7 @@ export function DashboardShell({
           </div>
 
           {/* Page Content */}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+          <div className="rounded-2xl border border-slate-300/60 bg-slate-100/95 shadow-2xl backdrop-blur p-6">
             {children}
           </div>
         </main>
