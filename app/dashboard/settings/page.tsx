@@ -1,5 +1,6 @@
 import {
   createLocationAction,
+  createTechnicianAction,
   deleteLocationAction,
   updateOrgNameAction,
 } from "@/app/dashboard/settings/actions";
@@ -150,6 +151,51 @@ export default async function SettingsPage() {
             </div>
           </div>
         </div>
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-4">
+          <ServerActionForm
+            action={createTechnicianAction}
+            resetOnSuccess
+            successMessage="Technician created successfully."
+            className="grid gap-2 md:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]"
+          >
+            <input
+              name="full_name"
+              required
+              placeholder="Full name *"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="Email *"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              name="phone"
+              placeholder="Phone"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              name="password"
+              type="text"
+              minLength={8}
+              required
+              placeholder="Temp password *"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <FormSubmitButton
+              type="submit"
+              pendingText="Creating..."
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Add Technician
+            </FormSubmitButton>
+          </ServerActionForm>
+          <p className="mt-2 text-xs text-slate-500">
+            Share the email and temporary password with technician. They can log in from mobile app (no signup needed).
+          </p>
+        </div>
         <div className="overflow-hidden">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50/80 text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
@@ -162,7 +208,7 @@ export default async function SettingsPage() {
             <tbody>
               {users?.map((user) => (
                 <tr key={user.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
-                  <td className="px-4 py-4 font-medium text-slate-900">{user.full_name || "User"}</td>
+                  <td className="px-4 py-4 font-medium text-slate-900">{user.full_name || "Technician"}</td>
                   <td className="px-4 py-4 capitalize text-slate-600">{user.role.replace("_", " ")}</td>
                   <td className="px-4 py-4 text-slate-600">{user.phone || "-"}</td>
                 </tr>
