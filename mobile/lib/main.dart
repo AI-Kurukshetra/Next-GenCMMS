@@ -199,8 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(6),
               child: Image.asset(
                 'assets/app_icon.png',
-                width: 24,
-                height: 24,
+                width: 34,
+                height: 34,
                 fit: BoxFit.cover,
               ),
             ),

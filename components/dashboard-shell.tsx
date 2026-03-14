@@ -18,7 +18,6 @@ const navItems = [
   { href: "/dashboard/meters", label: "Meters", icon: "📊" },
   { href: "/dashboard/documents", label: "Documents", icon: "📄" },
   { href: "/dashboard/maintenance-history", label: "History", icon: "📜" },
-  { href: "/dashboard/scan", label: "Scan QR", icon: "📱" },
   { href: "/dashboard/vendors", label: "Vendors", icon: "🤝" },
   { href: "/dashboard/reports", label: "Reports", icon: "📈" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },

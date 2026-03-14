@@ -13,13 +13,14 @@ import { formatDate } from "@/lib/utils";
 export default async function WorkOrdersPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; status?: string; priority?: string };
+  searchParams?: { q?: string; status?: string; priority?: string; assigned_to?: string };
 }) {
   const profile = await requireProfile();
   const supabase = await createClient();
   const q = (searchParams?.q ?? "").trim();
   const status = (searchParams?.status ?? "").trim();
   const priority = (searchParams?.priority ?? "").trim();
+  const assignedTo = (searchParams?.assigned_to ?? "").trim();
 
   const workOrdersQuery = supabase
     .from("work_orders")
@@ -36,6 +37,9 @@ export default async function WorkOrdersPage({
   }
   if (q) {
     workOrdersQuery.ilike("title", `%${q}%`);
+  }
+  if (assignedTo) {
+    workOrdersQuery.eq("assigned_to", assignedTo);
   }
 
   const [{ data: workOrders }, { data: assets }, { data: locations }, { data: technicians }] = await Promise.all([
@@ -81,6 +85,12 @@ export default async function WorkOrdersPage({
               { value: 'high', label: 'High' },
               { value: 'critical', label: 'Critical' },
             ],
+          },
+          {
+            name: 'assigned_to',
+            label: 'All technicians',
+            type: 'select',
+            options: (technicians ?? []).map((t) => ({ value: t.id, label: t.full_name || "Technician" })),
           },
         ]}
       />
@@ -148,6 +158,7 @@ export default async function WorkOrdersPage({
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Priority</th>
+                <th className="px-4 py-3">Technician</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Due</th>
                 <th className="px-4 py-3 text-right">Action</th>
@@ -159,6 +170,7 @@ export default async function WorkOrdersPage({
                   <td className="px-4 py-4 font-medium"><Link href={`/dashboard/work-orders/${wo.id}`} className="text-indigo-600 hover:underline">{wo.title}</Link></td>
                   <td className="px-4 py-4 capitalize text-slate-600">{wo.maintenance_type}</td>
                   <td className="px-4 py-4"><span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${wo.priority === 'critical' ? 'bg-red-100 text-red-800' : wo.priority === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}`}>{wo.priority}</span></td>
+                  <td className="px-4 py-4 text-slate-600">{technicians?.find((t) => t.id === wo.assigned_to)?.full_name || "-"}</td>
                   <td className="px-4 py-4">
                     <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
                       {wo.status.replaceAll("_", " ")}
@@ -181,7 +193,7 @@ export default async function WorkOrdersPage({
                     </div>
                   </td>
                 </tr>
-              )) : <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">No work orders yet</td></tr>}
+              )) : <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500">No work orders yet</td></tr>}
             </tbody>
           </table>
         </div>

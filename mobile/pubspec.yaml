@@ -64,6 +64,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/app_icon.png
+    - assets/splash_icon.png
 
 flutter_launcher_icons:
   android: true
@@ -73,12 +74,14 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/app_icon.png
+  image: assets/splash_icon.png
+  android_gravity: center
+  ios_content_mode: center
   android: true
   ios: true
   web: false
   android_12:
-    image: assets/app_icon.png
+    image: assets/splash_icon.png
     color: "#FFFFFF"
 
   # To add assets to your application, add an assets section, like this:

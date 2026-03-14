@@ -96,6 +96,8 @@ export default async function WorkOrderDetailPage({
         >
           <h3 className="text-base font-bold text-slate-900">Edit Work Order</h3>
           <input type="hidden" name="id" value={workOrder.id} />
+          <input type="hidden" name="location_id" value={workOrder.location_id} />
+          <input type="hidden" name="asset_id" value={workOrder.asset_id} />
           <input name="title" defaultValue={workOrder.title} required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <textarea
             name="description"
