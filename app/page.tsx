@@ -33,9 +33,9 @@ export default async function HomePage() {
               <Image
                 src="/logo.png"
                 alt="Asset Ops Logo"
-                width={32}
-                height={32}
-                className="h-8 w-8"
+                width={56}
+                height={56}
+                className="h-14 w-14"
                 priority
               />
             </div>
